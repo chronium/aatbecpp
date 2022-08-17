@@ -17,6 +17,9 @@ public:
   static std::unique_ptr<SrcFile> FromFile(std::string &path);
 
   char Char(size_t at);
+
+  bool Contains(size_t at, const char *str);
+  bool Contains(size_t at, std::string str);
 private:
   std::unique_ptr<std::string> content;
 };

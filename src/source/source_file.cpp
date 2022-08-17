@@ -42,4 +42,12 @@ char SrcFile::Char(size_t at) {
   return this->content->at(at);
 }
 
+bool SrcFile::Contains(size_t at, const char *str) {
+  return SrcFile::Contains(at, std::string(str));
+}
+
+bool SrcFile::Contains(size_t at, std::string str) {
+  return this->content->substr(at, str.length()) == str;
+}
+
 }

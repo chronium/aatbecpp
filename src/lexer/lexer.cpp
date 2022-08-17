@@ -40,7 +40,14 @@ Token *Lexer::makeToken(aatbe::lexer::TokenKind kind, std::string *valueS, uint6
   return tok;
 }
 
+void Lexer::consume_whitespace() {
+  while (std::iswspace(this->peek()))
+    this->read();
+}
+
 Token *Lexer::Next() {
+  this->consume_whitespace();
+
   if (this->peek() == 0)
     return Lexer::makeToken(TokenKind::EndOfFile, "<eof>");
 
@@ -49,6 +56,19 @@ Token *Lexer::Next() {
   std::string valueS;
 
   auto is_hex_start = [](char c) -> bool { return c == 'x' || c == 'X'; };
+
+  auto matches_kw = [=](const char *kw) -> bool {
+    return this->file->Contains(this->index, kw);
+  };
+
+  auto read_kw = [=](const char *kw) -> bool {
+    if (matches_kw(kw)) {
+      this->index += std::strlen(kw);
+      return true;
+    }
+
+    return false;
+  };
 
   if (std::isdigit(cur) ||
       (cur == '-' && std::isdigit(next)) ||
@@ -70,7 +90,10 @@ Token *Lexer::Next() {
 
     auto valueI = std::stoll(valueS, nullptr, is_hex ? 16 : 10);
     return Lexer::makeToken(TokenKind::Number, new std::string(valueS), valueI);
-  }
+  } else if (read_kw("true"))
+    return Lexer::makeToken(TokenKind::Boolean, new std::string("true"), 1);
+  else if (read_kw("false"))
+    return Lexer::makeToken(TokenKind::Boolean, new std::string("false"), 0);
 
   return Lexer::makeToken(TokenKind::Unexpected, new std::string(std::to_string(this->read())));
 }

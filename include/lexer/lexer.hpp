@@ -24,6 +24,8 @@ private:
   char peek(off_t off = 0);
   char read();
 
+  void consume_whitespace();
+
   Token *makeToken(TokenKind kind, std::string *valueS);
   Token *makeToken(TokenKind kind, const char *valueS);
   Token *makeToken(TokenKind kind, std::string *valueS, uint64_t valueI);

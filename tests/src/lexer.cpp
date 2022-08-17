@@ -18,12 +18,14 @@ Lexer *makeLexer(std::unique_ptr<SrcFile> file) {
   return new Lexer(std::move(file));
 }
 
+#define EXPECT_STREQ_IN(LEFT, RIGHT) EXPECT_STREQ((LEFT)->get()->c_str(), RIGHT);
+
 TEST(Lexer, EndOfFile) {
   auto lexer = makeLexer(makeFile(""));
 
   auto eof_tok = lexer->Next();
 
-  ASSERT_EQ(eof_tok->Kind(), TokenKind::EndOfFile);
+  EXPECT_EQ(eof_tok->Kind(), TokenKind::EndOfFile);
 }
 
 TEST(Lexer, Number) {
@@ -31,8 +33,8 @@ TEST(Lexer, Number) {
 
   auto number_tok = lexer->Next();
 
-  ASSERT_EQ(number_tok->Kind(), TokenKind::Number);
-  ASSERT_EQ(number_tok->ValueI(), 1234567);
+  EXPECT_EQ(number_tok->Kind(), TokenKind::Number);
+  EXPECT_EQ(number_tok->ValueI(), 1234567);
 }
 
 TEST(Lexer, NegativeNumber) {
@@ -40,8 +42,8 @@ TEST(Lexer, NegativeNumber) {
 
   auto number_tok = lexer->Next();
 
-  ASSERT_EQ(number_tok->Kind(), TokenKind::Number);
-  ASSERT_EQ(number_tok->ValueI(), -1234567);
+  EXPECT_EQ(number_tok->Kind(), TokenKind::Number);
+  EXPECT_EQ(number_tok->ValueI(), -1234567);
 }
 
 TEST(Lexer, HexNumber) {
@@ -49,6 +51,21 @@ TEST(Lexer, HexNumber) {
 
   auto number_tok = lexer->Next();
 
-  ASSERT_EQ(number_tok->Kind(), TokenKind::Number);
-  ASSERT_EQ(number_tok->ValueI(), 0x1234);
+  EXPECT_EQ(number_tok->Kind(), TokenKind::Number);
+  EXPECT_EQ(number_tok->ValueI(), 0x1234);
+}
+
+TEST(Lexer, Boolean) {
+  auto lexer = makeLexer(makeFile("true false"));
+
+  auto true_tok = lexer->Next();
+  auto false_tok = lexer->Next();
+
+  EXPECT_EQ(true_tok->Kind(), TokenKind::Boolean);
+  EXPECT_STREQ_IN(true_tok->ValueS(), "true");
+  EXPECT_EQ(true_tok->ValueI(), 1);
+
+  EXPECT_EQ(false_tok->Kind(), TokenKind::Boolean);
+  EXPECT_STREQ_IN(false_tok->ValueS(), "false");
+  EXPECT_EQ(false_tok->ValueI(), 0);
 }

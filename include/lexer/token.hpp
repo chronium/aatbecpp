@@ -16,6 +16,8 @@ enum TokenKind {
   EndOfFile,
   Number,
   Unexpected,
+  Boolean,
+  Char,
 };
 
 class Token {
