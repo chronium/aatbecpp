@@ -100,5 +100,6 @@
         "thread": "cpp",
         "unordered_set": "cpp"
     },
-    "python.formatting.provider": "black"
+    "python.formatting.provider": "black",
+    "editor.tabSize": 2
 }

@@ -25,7 +25,7 @@ enum TokenKind {
   Symbol,
 };
 
-class Token {
+struct Token {
 public:
   Token(TokenKind kind, std::string *valueS, uint64_t valueI,
         std::shared_ptr<SrcFile> &file, size_t start, size_t end);
