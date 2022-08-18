@@ -92,7 +92,13 @@
         "variant": "cpp",
         "version": "cpp",
         "__functional_03": "cpp",
-        "__functional_base_03": "cpp"
+        "__functional_base_03": "cpp",
+        "__split_buffer": "cpp",
+        "condition_variable": "cpp",
+        "forward_list": "cpp",
+        "random": "cpp",
+        "thread": "cpp",
+        "unordered_set": "cpp"
     },
     "python.formatting.provider": "black"
 }

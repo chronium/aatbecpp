@@ -4,6 +4,7 @@
 
 #pragma once
 
+#include <memory>
 #include <string>
 
 namespace aatbe::source {
@@ -20,8 +21,11 @@ public:
 
   bool Contains(size_t at, const char *str);
   bool Contains(size_t at, std::string str);
+
+  std::string *Copy(size_t at, size_t len);
+
 private:
   std::unique_ptr<std::string> content;
 };
 
-}
+} // namespace aatbe::source

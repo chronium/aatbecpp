@@ -4,8 +4,9 @@
 
 #pragma once
 
-#include <string>
+#include <memory>
 #include <source/source_file.hpp>
+#include <string>
 #include <tuple>
 
 namespace aatbe::lexer {
@@ -26,40 +27,23 @@ enum TokenKind {
 
 class Token {
 public:
-  Token(TokenKind kind,
-        std::string *valueS,
-        uint64_t valueI,
-        std::shared_ptr<SrcFile> &file,
-        size_t start,
-        size_t end);
+  Token(TokenKind kind, std::string *valueS, uint64_t valueI,
+        std::shared_ptr<SrcFile> &file, size_t start, size_t end);
 
-  Token(TokenKind kind,
-        std::string *valueS,
-        uint64_t valueI,
-        size_t start,
+  Token(TokenKind kind, std::string *valueS, uint64_t valueI, size_t start,
         size_t end);
 
   bool operator==(Token const &);
 
-  bool operator!=(Token const &rhs) {
-    return !(this == &rhs);
-  }
+  bool operator!=(Token const &rhs) { return !(this == &rhs); }
 
-  TokenKind Kind() const {
-    return this->kind;
-  }
+  TokenKind Kind() const { return this->kind; }
 
-  const std::string &ValueS() const {
-    return *this->valueS.get();
-  }
+  const std::string &ValueS() const { return *this->valueS.get(); }
 
-  const char *c_str() const {
-    return this->valueS.get()->c_str();
-  }
+  const char *c_str() const { return this->valueS.get()->c_str(); }
 
-  uint64_t ValueI() const {
-    return this->valueI;
-  }
+  uint64_t ValueI() const { return this->valueI; }
 
   size_t Start() const { return this->start; }
   size_t End() const { return this->end; }

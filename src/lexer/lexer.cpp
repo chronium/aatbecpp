@@ -4,17 +4,21 @@
 
 #include <lexer/lexer.hpp>
 
-#include <string>
 #include <algorithm>
+#include <cstring>
+#include <functional>
+#include <memory>
+#include <string>
+#include <vector>
 
 using namespace aatbe::source;
 
 namespace aatbe::lexer {
 
 // https://inversepalindrome.com/blog/how-to-format-a-string-in-cpp
-template<typename T>
-auto convert(T &&t) {
-  if constexpr (std::is_same<std::remove_cv_t<std::remove_reference_t<T>>, std::string>::value) {
+template <typename T> auto convert(T &&t) {
+  if constexpr (std::is_same<std::remove_cv_t<std::remove_reference_t<T>>,
+                             std::string>::value) {
     return std::forward<T>(t).c_str();
   } else {
     return std::forward<T>(t);
@@ -22,35 +26,31 @@ auto convert(T &&t) {
 }
 
 // https://inversepalindrome.com/blog/how-to-format-a-string-in-cpp
-template<typename... Args>
-std::string format_string_internal(const std::string &format, Args &&... args) {
-  const auto size = std::snprintf(nullptr, 0, format.c_str(), std::forward<Args>(args)...) + 1;
+template <typename... Args>
+std::string format_string_internal(const std::string &format, Args &&...args) {
+  const auto size =
+      std::snprintf(nullptr, 0, format.c_str(), std::forward<Args>(args)...) +
+      1;
   const auto buffer = std::make_unique<char[]>(size);
 
-  std::snprintf(buffer.get(), size, format.c_str(), std::forward<Args>(args)...);
+  std::snprintf(buffer.get(), size, format.c_str(),
+                std::forward<Args>(args)...);
 
   return std::string(buffer.get(), buffer.get() + size - 1);
 }
 
 // https://inversepalindrome.com/blog/how-to-format-a-string-in-cpp
-template<typename... Args>
-std::string format_string(const std::string &format, Args &&... args) {
+template <typename... Args>
+std::string format_string(const std::string &format, Args &&...args) {
   return format_string_internal(format, convert(std::forward<Args>(args))...);
 }
 
 Lexer::Lexer(std::shared_ptr<SrcFile> file)
-    : file(std::move(file)),
-      index(0),
-      last_index(0) {
-}
+    : file(std::move(file)), index(0), last_index(0) {}
 
-char Lexer::peek(off_t off) {
-  return file->Char(this->index + off);
-}
+char Lexer::peek(off_t off) { return file->Char(this->index + off); }
 
-char Lexer::read() {
-  return file->Char(this->index++);
-}
+char Lexer::read() { return file->Char(this->index++); }
 
 Token *Lexer::makeToken(TokenKind kind, std::string *valueS) {
   return Lexer::makeToken(kind, valueS, 0);
@@ -60,21 +60,29 @@ Token *Lexer::makeToken(TokenKind kind, const char *valueS) {
   return Lexer::makeToken(kind, new std::string(valueS), 0);
 }
 
-Token *Lexer::makeToken(aatbe::lexer::TokenKind kind, std::string *valueS, uint64_t valueI) {
-  auto tok = new Token(kind, valueS, valueI, this->file, this->last_index, this->index);
+Token *Lexer::makeToken(TokenKind kind, std::string *valueS, uint64_t valueI) {
+  auto tok = new Token(kind, valueS, valueI, this->file, this->last_index,
+                       this->index);
   this->last_index = this->index;
 
   return tok;
 }
 
-Token *Lexer::makeToken(aatbe::lexer::TokenKind kind, const char *valueS, uint64_t valueI) {
+Token *Lexer::makeToken(TokenKind kind, const char *valueS, uint64_t valueI) {
   return Lexer::makeToken(kind, new std::string(valueS), valueI);
 }
 
 void Lexer::consume_whitespace() {
-  while (std::iswspace(this->peek()))
+  while (std::isspace(this->peek()))
     this->read();
+  this->last_index = this->index;
 }
+
+std::vector<std::string> symbols = {
+    "++", "--", "+",  "-",  "*", "/",  "=",  "==", "!=", ">",   "<",
+    "<=", ">=", "&&", "||", "!", "->", "<-", "|>", "<|", "...", "..",
+    ".",  "&",  "|",  "^",  "~", ">>", "<<", "{",  "}",  "[",   "]",
+    "(",  ")",  ",",  ";",  "%", "+=", "-=", "*=", "/=", "%="};
 
 Token *Lexer::Next() {
   this->consume_whitespace();
@@ -84,6 +92,11 @@ Token *Lexer::Next() {
 
   auto cur = this->peek();
   auto next = this->peek(1);
+
+  auto sym3 = this->file->Copy(this->index, 3);
+  auto sym2 = this->file->Copy(this->index, 2);
+  auto sym1 = this->file->Copy(this->index, 1);
+
   std::string valueS;
 
   auto is_hex_start = [](char c) -> bool { return c == 'x' || c == 'X'; };
@@ -106,12 +119,18 @@ Token *Lexer::Next() {
       this->read();
 
       switch (this->read()) {
-      case '\\':return '\\';
-      case 'n':return '\n';
-      case 't':return '\t';
-      case 'r':return '\r';
-      case '"':return '"';
-      case '\'':fprintf(stderr, "Unexpected char delimiter at %zu", this->index);
+      case '\\':
+        return '\\';
+      case 'n':
+        return '\n';
+      case 't':
+        return '\t';
+      case 'r':
+        return '\r';
+      case '"':
+        return '"';
+      case '\'':
+        fprintf(stderr, "Unexpected char delimiter at %zu", this->index);
         exit(1);
       }
     }
@@ -119,8 +138,32 @@ Token *Lexer::Next() {
     return this->read();
   };
 
-  if (std::isdigit(cur) ||
-      (cur == '-' && std::isdigit(next)) ||
+  auto ident_start = [=](char c) -> bool {
+    return std::isalpha(c) || c == '_';
+  };
+
+  auto ident_continue = [=](char c) -> bool {
+    return ident_start(c) || std::isdigit(c);
+  };
+
+  auto ident_end = [=](char c) -> bool {
+    return ident_continue(c) || c == '?' || c == '!';
+  };
+
+  auto is_symbol = [=](std::string sym) -> bool {
+    return std::find(symbols.begin(), symbols.end(), sym) != symbols.end();
+  };
+
+  auto read_symbol = [=](std::string sym) -> bool {
+    if (is_symbol(sym)) {
+      this->index += sym.length();
+      return true;
+    }
+
+    return false;
+  };
+
+  if (std::isdigit(cur) || (cur == '-' && std::isdigit(next)) ||
       (cur == '0' && is_hex_start(next))) {
 
     auto is_hex = is_hex_start(next);
@@ -132,26 +175,26 @@ Token *Lexer::Next() {
       this->read(); // read x/X
     }
 
-    while (ishexnumber(this->peek()) || this->peek() == '_')
+    while (isxdigit(this->peek()) || this->peek() == '_')
       valueS += this->read();
 
-    auto rawValueS = new std::string(is_hex ? format_string("0%c%s", next, valueS) : valueS);
+    auto rawValueS =
+        new std::string(is_hex ? format_string("0%c%s", next, valueS) : valueS);
     valueS.erase(remove(valueS.begin(), valueS.end(), '_'), valueS.end());
 
     auto valueI = std::stoll(valueS, nullptr, is_hex ? 16 : 10);
-    return Lexer::makeToken(TokenKind::Number,
-                            rawValueS,
-                            valueI);
+    return Lexer::makeToken(TokenKind::Number, rawValueS, valueI);
   } else if (read_kw("true"))
     return Lexer::makeToken(TokenKind::Boolean, new std::string("true"), true);
   else if (read_kw("false"))
-    return Lexer::makeToken(TokenKind::Boolean, new std::string("false"), false);
+    return Lexer::makeToken(TokenKind::Boolean, new std::string("false"),
+                            false);
   else if (cur == '\'') {
     this->read();
     auto c = read_escape();
     valueS += c;
 
-    if (this->peek() != '\'') {
+    if (this->read() != '\'') {
       fprintf(stderr, "Unclosed char delimiter at %zu", this->index);
       exit(1);
     }
@@ -159,9 +202,42 @@ Token *Lexer::Next() {
     this->read();
 
     return Lexer::makeToken(TokenKind::Char, new std::string(valueS), c);
+  } else if (cur == '"') {
+    this->read();
+
+    while (this->peek() != '"' && this->peek())
+      valueS += read_escape();
+
+    if (this->read() != '\"') {
+      fprintf(stderr, "Unclosed string delimiter at %zu", this->index);
+      exit(1);
+    }
+
+    return Lexer::makeToken(TokenKind::String, new std::string(valueS));
+  } else if (ident_start(cur)) {
+    while (ident_continue(this->peek()))
+      valueS += this->read();
+
+    if (ident_end(this->peek()))
+      valueS += this->read();
+
+    return Lexer::makeToken(TokenKind::Identifier, new std::string(valueS));
+  } else if (is_symbol(*sym3)) {
+    read_symbol(*sym3);
+
+    return Lexer::makeToken(TokenKind::Symbol, sym3);
+  } else if (is_symbol(*sym2)) {
+    read_symbol(*sym2);
+
+    return Lexer::makeToken(TokenKind::Symbol, sym2);
+  } else if (is_symbol(*sym1)) {
+    read_symbol(*sym1);
+
+    return Lexer::makeToken(TokenKind::Symbol, sym1);
   }
 
-  return Lexer::makeToken(TokenKind::Unexpected, new std::string(std::to_string(this->read())));
+  return Lexer::makeToken(TokenKind::Unexpected,
+                          new std::string(std::to_string(this->read())));
 }
 
-}
+} // namespace aatbe::lexer

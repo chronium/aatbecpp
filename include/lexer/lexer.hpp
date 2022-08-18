@@ -4,11 +4,11 @@
 
 #pragma once
 
-#include <string>
 #include <cstdint>
+#include <string>
 
-#include <source/source_file.hpp>
 #include <lexer/token.hpp>
+#include <source/source_file.hpp>
 
 namespace aatbe::lexer {
 
@@ -29,7 +29,8 @@ private:
   Token *makeToken(TokenKind kind, std::string *valueS);
   Token *makeToken(TokenKind kind, const char *valueS);
   Token *makeToken(TokenKind kind, std::string *valueS, uint64_t valueI);
-  Token *makeToken(aatbe::lexer::TokenKind kind, const char *valueS, uint64_t valueI);
+  Token *makeToken(aatbe::lexer::TokenKind kind, const char *valueS,
+                   uint64_t valueI);
 
   std::shared_ptr<SrcFile> file;
 
@@ -37,4 +38,4 @@ private:
   size_t last_index;
 };
 
-}
+} // namespace aatbe::lexer

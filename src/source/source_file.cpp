@@ -2,16 +2,14 @@
 // Created by chronium on 16.08.2022.
 //
 
-#include <source/source_file.hpp>
-#include <iostream>
-#include <sstream>
 #include <fstream>
+#include <iostream>
+#include <source/source_file.hpp>
+#include <sstream>
 
 namespace aatbe::source {
 
-SrcFile::SrcFile(std::string *content)
-    : content(content) {
-}
+SrcFile::SrcFile(std::string *content) : content(content) {}
 
 std::unique_ptr<SrcFile> SrcFile::FromString(std::string &content) {
   return std::make_unique<SrcFile>(&content);
@@ -25,12 +23,12 @@ std::unique_ptr<SrcFile> SrcFile::FromFile(std::string &path) {
   std::ifstream input(path);
 
   if (!input.is_open()) {
-    std::cerr << "Could not open the file - '"
-              << path << "'" << std::endl;
+    std::cerr << "Could not open the file - '" << path << "'" << std::endl;
     exit(EXIT_FAILURE);
   }
 
-  auto content = new std::string((std::istreambuf_iterator<char>(input)), std::istreambuf_iterator<char>());
+  auto content = new std::string((std::istreambuf_iterator<char>(input)),
+                                 std::istreambuf_iterator<char>());
 
   return std::make_unique<SrcFile>(content);
 }
@@ -50,4 +48,8 @@ bool SrcFile::Contains(size_t at, std::string str) {
   return this->content->substr(at, str.length()) == str;
 }
 
+std::string *SrcFile::Copy(size_t at, size_t len) {
+  return new std::string(this->content->substr(at, len));
 }
+
+} // namespace aatbe::source

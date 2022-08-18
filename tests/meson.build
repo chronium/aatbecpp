@@ -9,7 +9,7 @@ libgtest = static_library(
         join_paths(gtest_dir, 'src', 'gtest-all.cc'),
         join_paths(gtest_dir, 'src', 'gtest_main.cc')
     ],
-    override_options : ['cpp_std=c++20']
+    override_options : ['cpp_std=c++17']
 )
 
 test_dep = declare_dependency(
