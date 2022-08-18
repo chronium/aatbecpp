@@ -33,6 +33,10 @@ Lexer *makeLexer(std::shared_ptr<SrcFile> file) {
   EXPECT_EQ((tok)->Kind(), TokenKind::Symbol);                                 \
   EXPECT_STREQ((tok)->c_str(), (valueS));
 
+#define EXPECT_TOKEN_KW(tok, valueS)                                           \
+  EXPECT_STREQ((tok)->c_str(), (valueS));                                      \
+  EXPECT_EQ((tok)->Kind(), TokenKind::Keyword);
+
 TEST(Lexer, EndOfFile) {
   auto lexer = makeLexer(makeFile(""));
 
@@ -130,7 +134,7 @@ TEST(Lexer, Symbol) {
                "& | ^ ~ "
                ">> >> "
                "{ } [ ] ( ) "
-               ", ; "
+               ", ; @ "
                "+= -= *= /= %= ";
   auto lexer = makeLexer(makeFile(input));
 
@@ -143,5 +147,23 @@ TEST(Lexer, Symbol) {
   for (auto symbol : symbols) {
     auto symbol_tok = lexer->Next();
     EXPECT_TOKEN_SYM(symbol_tok, symbol.c_str());
+  }
+}
+
+TEST(Lexer, Keyword) {
+  auto input = "if else while for break continue return then "
+               "fn in var val from use module export "
+               "const global type struct enum as";
+  auto lexer = makeLexer(makeFile(input));
+
+  std::stringstream stream(input);
+  std::istream_iterator<std::string> begin(stream);
+  std::istream_iterator<std::string> end;
+
+  auto keywords = std::vector<std::string>(begin, end);
+
+  for (auto keyword : keywords) {
+    auto keyword_tok = lexer->Next();
+    EXPECT_TOKEN_KW(keyword_tok, keyword.c_str());
   }
 }

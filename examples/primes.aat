@@ -1,0 +1,23 @@
+fn primes () = {
+    val n = 1_000_000
+    map = Vec[bool]
+
+    for val i in 0..n-1 {
+        push(map, true)
+    }
+
+    for val i in 2..=1000 {
+        if bools(i - 2) {
+            j = i * i
+            while j <= n {
+                bools(j - 2) = false
+                j += i
+            }
+        }
+    }
+
+    for k in 0..len(bools) {
+        if bools(k) then
+            printf("{}", k + 2)
+    }
+}

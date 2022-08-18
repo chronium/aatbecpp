@@ -45,8 +45,26 @@ std::string format_string(const std::string &format, Args &&...args) {
   return format_string_internal(format, convert(std::forward<Args>(args))...);
 }
 
+std::vector<std::string> symbols = {
+    "++", "--", "+",  "-",  "*", "/",  "=",  "==", "!=", ">",   "<",
+    "<=", ">=", "&&", "||", "!", "->", "<-", "|>", "<|", "...", "..",
+    ".",  "&",  "|",  "^",  "~", ">>", "<<", "{",  "}",  "[",   "]",
+    "(",  ")",  ",",  ";",  "%", "+=", "-=", "*=", "/=", "%=",  "@"};
+
+std::vector<std::string> keywords = {
+    "as",     "fn",     "if",     "in",       "for",    "use",
+    "val",    "var",    "else",   "enum",     "then",   "from",
+    "type",   "break",  "const",  "while",    "global", "return",
+    "struct", "export", "module", "continue",
+};
+
 Lexer::Lexer(std::shared_ptr<SrcFile> file)
-    : file(std::move(file)), index(0), last_index(0) {}
+    : file(std::move(file)), index(0), last_index(0) {
+  std::sort(symbols.begin(), symbols.end());
+  std::reverse(symbols.begin(), symbols.end());
+  std::sort(keywords.begin(), keywords.end());
+  std::reverse(keywords.begin(), keywords.end());
+}
 
 char Lexer::peek(off_t off) { return file->Char(this->index + off); }
 
@@ -78,12 +96,6 @@ void Lexer::consume_whitespace() {
   this->last_index = this->index;
 }
 
-std::vector<std::string> symbols = {
-    "++", "--", "+",  "-",  "*", "/",  "=",  "==", "!=", ">",   "<",
-    "<=", ">=", "&&", "||", "!", "->", "<-", "|>", "<|", "...", "..",
-    ".",  "&",  "|",  "^",  "~", ">>", "<<", "{",  "}",  "[",   "]",
-    "(",  ")",  ",",  ";",  "%", "+=", "-=", "*=", "/=", "%="};
-
 Token *Lexer::Next() {
   this->consume_whitespace();
 
@@ -92,10 +104,6 @@ Token *Lexer::Next() {
 
   auto cur = this->peek();
   auto next = this->peek(1);
-
-  auto sym3 = this->file->Copy(this->index, 3);
-  auto sym2 = this->file->Copy(this->index, 2);
-  auto sym1 = this->file->Copy(this->index, 1);
 
   std::string valueS;
 
@@ -150,19 +158,6 @@ Token *Lexer::Next() {
     return ident_continue(c) || c == '?' || c == '!';
   };
 
-  auto is_symbol = [=](std::string sym) -> bool {
-    return std::find(symbols.begin(), symbols.end(), sym) != symbols.end();
-  };
-
-  auto read_symbol = [=](std::string sym) -> bool {
-    if (is_symbol(sym)) {
-      this->index += sym.length();
-      return true;
-    }
-
-    return false;
-  };
-
   if (std::isdigit(cur) || (cur == '-' && std::isdigit(next)) ||
       (cur == '0' && is_hex_start(next))) {
 
@@ -214,7 +209,20 @@ Token *Lexer::Next() {
     }
 
     return Lexer::makeToken(TokenKind::String, new std::string(valueS));
-  } else if (ident_start(cur)) {
+  }
+
+  for (auto symbol : symbols) {
+    if (read_kw(symbol.c_str())) {
+      return Lexer::makeToken(TokenKind::Symbol, new std::string(symbol));
+    }
+  }
+
+  for (auto keyword : keywords) {
+    if (read_kw(keyword.c_str()))
+      return Lexer::makeToken(TokenKind::Keyword, keyword.c_str());
+  }
+
+  if (ident_start(cur)) {
     while (ident_continue(this->peek()))
       valueS += this->read();
 
@@ -222,18 +230,6 @@ Token *Lexer::Next() {
       valueS += this->read();
 
     return Lexer::makeToken(TokenKind::Identifier, new std::string(valueS));
-  } else if (is_symbol(*sym3)) {
-    read_symbol(*sym3);
-
-    return Lexer::makeToken(TokenKind::Symbol, sym3);
-  } else if (is_symbol(*sym2)) {
-    read_symbol(*sym2);
-
-    return Lexer::makeToken(TokenKind::Symbol, sym2);
-  } else if (is_symbol(*sym1)) {
-    read_symbol(*sym1);
-
-    return Lexer::makeToken(TokenKind::Symbol, sym1);
   }
 
   return Lexer::makeToken(TokenKind::Unexpected,
