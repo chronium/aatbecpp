@@ -18,6 +18,10 @@ enum TokenKind {
   Unexpected,
   Boolean,
   Char,
+  String,
+  Identifier,
+  Keyword,
+  Symbol,
 };
 
 class Token {
@@ -29,12 +33,28 @@ public:
         size_t start,
         size_t end);
 
+  Token(TokenKind kind,
+        std::string *valueS,
+        uint64_t valueI,
+        size_t start,
+        size_t end);
+
+  bool operator==(Token const &);
+
+  bool operator!=(Token const &rhs) {
+    return !(this == &rhs);
+  }
+
   TokenKind Kind() const {
     return this->kind;
   }
 
-  const std::unique_ptr<std::string> *ValueS() const {
-    return &this->valueS;
+  const std::string &ValueS() const {
+    return *this->valueS.get();
+  }
+
+  const char *c_str() const {
+    return this->valueS.get()->c_str();
   }
 
   uint64_t ValueI() const {

@@ -39,14 +39,16 @@ exe = executable('lang',
   install : true,
   dependencies: [llvm_dep, comp_dep],
   include_directories: [argparse, includes],
-  override_options : ['cpp_std=c++20'])
+  override_options : ['cpp_std=c++20'],
+  cpp_args: ['--coverage', '-g'],
+  link_args: ['--coverage', '-g'])
 
 project_dep = declare_dependency(
   include_directories: [includes],
   link_with : libcomp
 )
 
-test('execute', exe)
+test('execute', exe, args: ['../hello.aat'])
 
 subdir('tests')
 

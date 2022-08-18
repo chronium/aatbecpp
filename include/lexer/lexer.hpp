@@ -16,7 +16,7 @@ using namespace aatbe::source;
 
 class Lexer {
 public:
-  Lexer(std::unique_ptr<SrcFile> file);
+  Lexer(std::shared_ptr<SrcFile> file);
 
   Token *Next();
 
@@ -29,6 +29,7 @@ private:
   Token *makeToken(TokenKind kind, std::string *valueS);
   Token *makeToken(TokenKind kind, const char *valueS);
   Token *makeToken(TokenKind kind, std::string *valueS, uint64_t valueI);
+  Token *makeToken(aatbe::lexer::TokenKind kind, const char *valueS, uint64_t valueI);
 
   std::shared_ptr<SrcFile> file;
 

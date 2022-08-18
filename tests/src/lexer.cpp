@@ -10,22 +10,25 @@
 using namespace aatbe::source;
 using namespace aatbe::lexer;
 
-std::unique_ptr<SrcFile> makeFile(const char *content) {
+std::shared_ptr<SrcFile> makeFile(const char *content) {
   return SrcFile::FromString(content);
 }
 
-Lexer *makeLexer(std::unique_ptr<SrcFile> file) {
+Lexer *makeLexer(std::shared_ptr<SrcFile> file) {
   return new Lexer(std::move(file));
 }
 
-#define EXPECT_STREQ_IN(LEFT, RIGHT) EXPECT_STREQ((LEFT)->get()->c_str(), RIGHT);
+#define EXPECT_TOKEN_SI(tok, kind, valueS, valueI) \
+  EXPECT_EQ((tok)->Kind(), (kind));                \
+  EXPECT_STREQ((tok)->c_str(), (valueS));          \
+  EXPECT_EQ((tok)->ValueI(), (valueI));
 
 TEST(Lexer, EndOfFile) {
   auto lexer = makeLexer(makeFile(""));
 
   auto eof_tok = lexer->Next();
 
-  EXPECT_EQ(eof_tok->Kind(), TokenKind::EndOfFile);
+  EXPECT_TOKEN_SI(eof_tok, TokenKind::EndOfFile, "<eof>", EOF);
 }
 
 TEST(Lexer, Number) {
@@ -33,8 +36,7 @@ TEST(Lexer, Number) {
 
   auto number_tok = lexer->Next();
 
-  EXPECT_EQ(number_tok->Kind(), TokenKind::Number);
-  EXPECT_EQ(number_tok->ValueI(), 1234567);
+  EXPECT_TOKEN_SI(number_tok, TokenKind::Number, "1234_567", 1234567);
 }
 
 TEST(Lexer, NegativeNumber) {
@@ -42,8 +44,7 @@ TEST(Lexer, NegativeNumber) {
 
   auto number_tok = lexer->Next();
 
-  EXPECT_EQ(number_tok->Kind(), TokenKind::Number);
-  EXPECT_EQ(number_tok->ValueI(), -1234567);
+  EXPECT_TOKEN_SI(number_tok, TokenKind::Number, "-1234_567", -1234567);
 }
 
 TEST(Lexer, HexNumber) {
@@ -51,8 +52,7 @@ TEST(Lexer, HexNumber) {
 
   auto number_tok = lexer->Next();
 
-  EXPECT_EQ(number_tok->Kind(), TokenKind::Number);
-  EXPECT_EQ(number_tok->ValueI(), 0x1234);
+  EXPECT_TOKEN_SI(number_tok, TokenKind::Number, "0x1234", 0x1234);
 }
 
 TEST(Lexer, Boolean) {
@@ -61,11 +61,20 @@ TEST(Lexer, Boolean) {
   auto true_tok = lexer->Next();
   auto false_tok = lexer->Next();
 
-  EXPECT_EQ(true_tok->Kind(), TokenKind::Boolean);
-  EXPECT_STREQ_IN(true_tok->ValueS(), "true");
-  EXPECT_EQ(true_tok->ValueI(), 1);
+  EXPECT_TOKEN_SI(true_tok, TokenKind::Boolean, "true", true);
+  EXPECT_TOKEN_SI(false_tok, TokenKind::Boolean, "false", false);
+}
 
-  EXPECT_EQ(false_tok->Kind(), TokenKind::Boolean);
-  EXPECT_STREQ_IN(false_tok->ValueS(), "false");
-  EXPECT_EQ(false_tok->ValueI(), 0);
+TEST(Lexer, Char) {
+  auto lexer = makeLexer(makeFile(R"('a' '\n' '0' '\\')"));
+
+  auto a_tok = lexer->Next();
+  auto nl_tok = lexer->Next();
+  auto zero_tok = lexer->Next();
+  auto backslash_tok = lexer->Next();
+
+  EXPECT_TOKEN_SI(a_tok, TokenKind::Char, "a", 'a');
+  EXPECT_TOKEN_SI(nl_tok, TokenKind::Char, "\n", '\n');
+  EXPECT_TOKEN_SI(zero_tok, TokenKind::Char, "0", '0');
+  EXPECT_TOKEN_SI(backslash_tok, TokenKind::Char, "\\", '\\');
 }
