@@ -19,7 +19,7 @@ sources = [
 
 tests = [
   'tests/src/lexer.cpp',
-  'tests/src/parser/atoms.cpp'
+  'tests/src/parser/terminals.cpp'
 ]
 
 libcomp = shared_library(

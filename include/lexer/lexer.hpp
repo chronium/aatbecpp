@@ -18,6 +18,7 @@ class Lexer {
 public:
   Lexer(std::shared_ptr<SrcFile> file);
 
+  std::vector<Token> Lex();
   Token *Next();
 
 private:

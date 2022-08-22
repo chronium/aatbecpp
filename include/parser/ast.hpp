@@ -1,6 +1,7 @@
 #pragma once
 
 #include <string>
+#include <utility>
 #include <vector>
 
 namespace aatbe::parser {
@@ -16,38 +17,55 @@ enum class ModuleStatementKind {
   Type,
 };
 
-struct ModuleStatement {
+struct ModuleStatementNode {
+  ModuleStatementNode() = delete;
+
+  explicit ModuleStatementNode(ModuleStatementKind kind) : kind(kind) {}
+
+  auto Kind() const { return this->kind; }
+
+private:
   ModuleStatementKind kind;
 };
 
+struct FunctionStatement : ModuleStatementNode {
+  FunctionStatement() = delete;
+
+  explicit FunctionStatement(std::string name)
+      : ModuleStatementNode(ModuleStatementKind::Function),
+        name(std::move(name)) {}
+
+private:
+  std::string name;
+};
+
+struct ModuleStatement {
+  ModuleStatement() = delete;
+
+  template <typename T>
+  explicit ModuleStatement(T value)
+      : value(std::make_shared<T>(std::move(value))) {}
+
+  auto Value() { return value; }
+  auto Kind() { return value->Kind(); }
+
+  auto AsFunction() {
+    return std::static_pointer_cast<FunctionStatement>(value);
+  }
+
+private:
+  std::shared_ptr<ModuleStatementNode> value;
+};
+
 struct ModuleNode {
+public:
+  explicit ModuleNode(std::vector<std::unique_ptr<ModuleStatement>> statements)
+      : statements(std::move(statements)) {}
 
 private:
   std::string name;
 
-  std::vector<ModuleStatement> statements;
-};
-
-enum AtomKind : int {
-  Boolean,
-};
-
-struct Atom {
-  Atom() = delete;
-
-  explicit Atom(AtomKind kind) : kind(kind) {}
-
-  AtomKind Kind() const { return this->kind; }
-
-  AtomKind kind;
-};
-
-struct BooleanAtom : Atom {
-  explicit BooleanAtom(bool value) : Atom(AtomKind::Boolean), value(value) {}
-
-  bool Value() const { return value; }
-
-  bool value;
+  std::vector<std::unique_ptr<ModuleStatement>> statements;
 };
 
 } // namespace aatbe::parser

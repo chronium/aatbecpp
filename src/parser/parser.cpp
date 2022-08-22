@@ -6,25 +6,46 @@
 #include <parser/ast.hpp>
 #include <parser/parser.hpp>
 
-#include <parser/atoms.hpp>
-
-#include <vector>
-
 using namespace aatbe::lexer;
 using namespace aatbe::parser;
 
 namespace aatbe::parser {
 
-ParseResult<Token *, BooleanAtom> ParseBoolean(std::vector<Token *> tokens) {
-  if (tokens.empty()) {
-    return ParserError(ParserErrorKind::InvalidToken, "Expected boolean");
+auto Parser::PeekKeyword(const char *keyword) {
+  if (auto token = this->Peek())
+    if (token->get()->Kind() == TokenKind::Keyword)
+      return token->get()->ValueS() == keyword;
+
+  return false;
+}
+
+auto Parser::ReadKeyword(const char *keyword) {
+  return this->PeekKeyword(keyword) ? this->Read() : std::nullopt;
+}
+
+ParseResult<ModuleStatement> Parser::ParseModuleStatement() {
+  if (ReadKeyword("fn"))
+    return ParserSuccess(ModuleStatement(FunctionStatement("")));
+
+  return ParserError(ParseErrorKind::UnexpectedToken, "");
+}
+
+ParseResult<TerminalNode> Parser::ParseTerminal() {
+  if (auto token = this->Peek()) {
+    switch (token->get()->Kind()) {
+    case TokenKind::Number:
+      return ParserSuccess(TerminalNode(IntegerTerm(this->Read()->get()->ValueI())));
+    case TokenKind::Char:
+      return ParserSuccess(TerminalNode(CharTerm(this->Read()->get()->ValueS()[0])));
+    case TokenKind::String:
+      return ParserSuccess(TerminalNode(StringTerm(this->Read()->get()->ValueS())));
+    case TokenKind::Boolean:
+      return ParserSuccess(TerminalNode(BooleanTerm(this->Read()->get()->ValueI())));
+    default:
+      return ParserError(ParseErrorKind::InvalidToken, "");
+    }
   }
-  if (tokens[0]->Kind() == TokenKind::Boolean) {
-    return ParserSuccess(std::vector<Token *>(tokens.begin() + 1, tokens.end()),
-                         BooleanAtom(tokens[0]->ValueI()));
-  } else {
-    return ParserError(ParserErrorKind::InvalidToken, "Expected boolean");
-  }
+  return ParserError(ParseErrorKind::UnexpectedToken, "");
 }
 
 } // namespace aatbe::parser
