@@ -14,7 +14,7 @@ using namespace aatbe::lexer;
 
 namespace aatbe::parser {
 
-enum TerminalKind : int { Boolean, Integer, Char, String, Identifier };
+enum TerminalKind : int { Boolean, Integer, Character, String, Identifier };
 
 struct Terminal {
   Terminal() = delete;
@@ -47,7 +47,7 @@ struct IntegerTerm : Terminal {
 
 struct CharTerm : Terminal {
   explicit CharTerm(char value)
-      : Terminal(TerminalKind::Char), value(value) {}
+      : Terminal(TerminalKind::Character), value(value) {}
 
   char Value() const { return value; }
   char value;

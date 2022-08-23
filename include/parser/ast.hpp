@@ -35,6 +35,8 @@ struct FunctionStatement : ModuleStatementNode {
       : ModuleStatementNode(ModuleStatementKind::Function),
         name(std::move(name)) {}
 
+  auto Name() const { return this->name; }
+
 private:
   std::string name;
 };

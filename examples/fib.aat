@@ -1,4 +1,4 @@
-fn fib n: u64 -> u64 = {
+fn fib n: uint64 -> uint64 = {
     if n == 0 || n == 1 then
         return n
     

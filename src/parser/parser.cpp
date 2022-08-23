@@ -11,6 +11,13 @@ using namespace aatbe::parser;
 
 namespace aatbe::parser {
 
+bool Parser::Match(TokenKind kind) {
+    if (auto token = this->Peek())
+      return token->get()->Kind() == kind;
+
+    return false;
+}
+
 auto Parser::PeekKeyword(const char *keyword) {
   if (auto token = this->Peek())
     if (token->get()->Kind() == TokenKind::Keyword)
@@ -45,7 +52,7 @@ ParseResult<TerminalNode> Parser::ParseTerminal() {
       return ParserError(ParseErrorKind::InvalidToken, "");
     }
   }
-  return ParserError(ParseErrorKind::UnexpectedToken, "");
+  return ParserError(ParseErrorKind::UnexpectedEof, "");
 }
 
 } // namespace aatbe::parser

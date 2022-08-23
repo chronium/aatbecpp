@@ -3,29 +3,15 @@
 //
 
 #include <gtest/gtest.h>
-
-#include <lexer/lexer.hpp>
 #include <parser/parser.hpp>
 
 #include <vector>
 
+#include "base.hpp"
+
 using namespace aatbe::lexer;
 using namespace aatbe::source;
 using namespace aatbe::parser;
-
-std::vector<Token *> makeTokens(const char *content) {
-  auto file = SrcFile::FromString(content);
-  auto lexer = new Lexer(std::move(file));
-  auto tokens = std::vector<Token *>();
-  while (true) {
-    auto tok = lexer->Next();
-    if (tok->Kind() == TokenKind::EndOfFile) {
-      break;
-    }
-    tokens.push_back(tok);
-  }
-  return tokens;
-}
 
 TEST(TerminalParser, Boolean) {
   auto tokens = makeTokens("true false");
@@ -73,15 +59,15 @@ TEST(TerminalParser, Char) {
   auto c = parser.ParseTerminal();
 
   EXPECT_TRUE(a);
-  EXPECT_EQ(a.Kind(), TerminalKind::Char);
+  EXPECT_EQ(a.Kind(), TerminalKind::Character);
   EXPECT_EQ(Unwrap(a, Char), 'a');
 
   EXPECT_TRUE(b);
-  EXPECT_EQ(b.Kind(), TerminalKind::Char);
+  EXPECT_EQ(b.Kind(), TerminalKind::Character);
   EXPECT_EQ(Unwrap(b, Char), '\n');
 
   EXPECT_TRUE(c);
-  EXPECT_EQ(c.Kind(), TerminalKind::Char);
+  EXPECT_EQ(c.Kind(), TerminalKind::Character);
   EXPECT_EQ(Unwrap(c, Char), '\t');
 }
 

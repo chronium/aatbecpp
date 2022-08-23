@@ -211,15 +211,10 @@ Token *Lexer::Next() {
     return Lexer::makeToken(TokenKind::String, new std::string(valueS));
   }
 
-  for (auto symbol : symbols) {
+  for (const auto& symbol : symbols) {
     if (read_kw(symbol.c_str())) {
       return Lexer::makeToken(TokenKind::Symbol, new std::string(symbol));
     }
-  }
-
-  for (auto keyword : keywords) {
-    if (read_kw(keyword.c_str()))
-      return Lexer::makeToken(TokenKind::Keyword, keyword.c_str());
   }
 
   if (ident_start(cur)) {
@@ -229,7 +224,10 @@ Token *Lexer::Next() {
     if (ident_end(this->peek()))
       valueS += this->read();
 
-    return Lexer::makeToken(TokenKind::Identifier, new std::string(valueS));
+    if (std::find(keywords.begin(), keywords.end(), valueS) != keywords.end())
+      return Lexer::makeToken(TokenKind::Keyword, valueS.c_str());
+    else
+      return Lexer::makeToken(TokenKind::Identifier, valueS.c_str());
   }
 
   return Lexer::makeToken(TokenKind::Unexpected,

@@ -1,5 +1,5 @@
 @entry
-fn main () -> i32 = {
+fn main () -> int32 = {
     println("Hello World!")
 
     0

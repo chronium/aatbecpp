@@ -14,12 +14,14 @@ sources = [
   'src/lexer/lexer.cpp',
   'src/lexer/token.cpp',
   'src/source/source_file.cpp',
-  'src/parser/parser.cpp'
+  'src/parser/parser.cpp',
+  'src/parser/type.cpp',
 ]
 
 tests = [
   'tests/src/lexer.cpp',
-  'tests/src/parser/terminals.cpp'
+  'tests/src/parser/terminals.cpp',
+  'tests/src/parser/types.cpp'
 ]
 
 libcomp = shared_library(

@@ -20,7 +20,13 @@ concept AstNode = requires(T t) {
                     t.Kind();
                   };
 
-enum class ParseErrorKind { InvalidToken, UnexpectedToken, UnexpectedEof };
+enum class ParseErrorKind {
+  InvalidToken,
+  UnexpectedToken,
+  UnexpectedEof,
+  ExpectedToken,
+  ExpectedType
+};
 
 // ParserError is a simple error class that holds the error kind and the
 // error message.
@@ -87,11 +93,19 @@ public:
   auto PeekKeyword(const char *keyword);
   auto ReadKeyword(const char *keyword);
 
+  bool Match(TokenKind kind);
+
   auto Peek(off_t offset = 0) {
     return index + offset < this->tokens.size()
                ? std::optional<std::reference_wrapper<
                      Token *>>{this->tokens[index + offset]}
                : std::nullopt;
+  }
+  auto Peek(TokenKind kind, const char *valueS) {
+    if (auto token = this->Peek())
+      return token->get()->Kind() == kind && token->get()->ValueS() == valueS;
+
+    return false;
   }
 
   auto Read() {
@@ -99,6 +113,9 @@ public:
                ? std::optional<
                      std::reference_wrapper<Token *>>{this->tokens[index++]}
                : std::nullopt;
+  }
+  auto Read(TokenKind kind, const char *valueS) {
+    return this->Peek(kind, valueS) ? this->Read() : std::nullopt;
   }
 
   ParseResult<TerminalNode> ParseTerminal();

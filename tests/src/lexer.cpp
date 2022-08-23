@@ -167,3 +167,12 @@ TEST(Lexer, Keyword) {
     EXPECT_TOKEN_KW(keyword_tok, keyword.c_str());
   }
 }
+
+TEST(Lexer, Mixed) {
+  auto input = "int8";
+  auto lexer = makeLexer(makeFile(input));
+
+  auto int8_tok = lexer->Next();
+
+  EXPECT_TOKEN_S(int8_tok, TokenKind::Identifier, "int8");
+}
