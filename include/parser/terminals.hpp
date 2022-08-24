@@ -95,6 +95,10 @@ struct TerminalNode {
     return std::static_pointer_cast<StringTerm>(value);
   }
 
+  auto AsIdentifier() const -> std::shared_ptr<IdentifierTerm> {
+    return std::static_pointer_cast<IdentifierTerm>(value);
+  }
+
 private:
   std::shared_ptr<Terminal> value;
 };

@@ -91,3 +91,24 @@ TEST(TerminalParser, String) {
   EXPECT_EQ(c.Kind(), TerminalKind::String);
   EXPECT_STREQ(Unwrap(c, String).c_str(), "\\\n");
 }
+
+TEST(TerminalParser, Identifier) {
+  auto tokens = makeTokens("hello world _hello");
+  Parser parser(tokens);
+
+  auto a = parser.ParseTerminal();
+  auto b = parser.ParseTerminal();
+  auto c = parser.ParseTerminal();
+
+  EXPECT_TRUE(a);
+  EXPECT_EQ(a.Kind(), TerminalKind::Identifier);
+  EXPECT_STREQ(Unwrap(a, Identifier).c_str(), "hello");
+
+  EXPECT_TRUE(b);
+  EXPECT_EQ(b.Kind(), TerminalKind::Identifier);
+  EXPECT_STREQ(Unwrap(b, Identifier).c_str(), "world");
+
+  EXPECT_TRUE(c);
+  EXPECT_EQ(c.Kind(), TerminalKind::Identifier);
+  EXPECT_STREQ(Unwrap(c, Identifier).c_str(), "_hello");
+}

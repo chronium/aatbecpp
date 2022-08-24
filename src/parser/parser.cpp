@@ -12,10 +12,10 @@ using namespace aatbe::parser;
 namespace aatbe::parser {
 
 bool Parser::Match(TokenKind kind) {
-    if (auto token = this->Peek())
-      return token->get()->Kind() == kind;
+  if (auto token = this->Peek())
+    return token->get()->Kind() == kind;
 
-    return false;
+  return false;
 }
 
 auto Parser::PeekKeyword(const char *keyword) {
@@ -41,13 +41,20 @@ ParseResult<TerminalNode> Parser::ParseTerminal() {
   if (auto token = this->Peek()) {
     switch (token->get()->Kind()) {
     case TokenKind::Number:
-      return ParserSuccess(TerminalNode(IntegerTerm(this->Read()->get()->ValueI())));
+      return ParserSuccess(
+          TerminalNode(IntegerTerm(this->Read()->get()->ValueI())));
     case TokenKind::Char:
-      return ParserSuccess(TerminalNode(CharTerm(this->Read()->get()->ValueS()[0])));
+      return ParserSuccess(
+          TerminalNode(CharTerm(this->Read()->get()->ValueS()[0])));
     case TokenKind::String:
-      return ParserSuccess(TerminalNode(StringTerm(this->Read()->get()->ValueS())));
+      return ParserSuccess(
+          TerminalNode(StringTerm(this->Read()->get()->ValueS())));
     case TokenKind::Boolean:
-      return ParserSuccess(TerminalNode(BooleanTerm(this->Read()->get()->ValueI())));
+      return ParserSuccess(
+          TerminalNode(BooleanTerm(this->Read()->get()->ValueI())));
+    case TokenKind::Identifier:
+      return ParserSuccess(
+          TerminalNode(IdentifierTerm(this->Read()->get()->ValueS())));
     default:
       return ParserError(ParseErrorKind::InvalidToken, "");
     }
