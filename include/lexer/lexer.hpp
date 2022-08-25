@@ -6,8 +6,11 @@
 
 #include <cstdint>
 #include <string>
+#include <vector>
+#include <variant>
 
 #include <lexer/token.hpp>
+#include <vector>
 #include <source/source_file.hpp>
 
 namespace aatbe::lexer {

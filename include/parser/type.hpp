@@ -5,8 +5,10 @@
 #pragma once
 
 #include <parser/parser.hpp>
+
 #include <string>
 #include <vector>
+#include <cassert>
 
 namespace aatbe::parser {
 
@@ -30,149 +32,158 @@ enum TypeKind {
   Slice,
 };
 
+struct TypeNode;
+
 struct Type {
-  Type() = delete;
+  Type() = default;
+  Type(Type &&) = delete;
+  Type(Type const &) = delete;
+  Type &operator=(Type const &) = delete;
 
-  explicit Type(TypeKind kind) : kind(kind) {}
+  virtual ~Type() = default;
 
-  auto Kind() const { return this->kind; }
+  virtual TypeKind Kind() const = 0;
+  virtual TypeKind Value() const { return Kind(); }
+};
 
-  auto Value() const { return this->Kind(); }
+struct SIntType : public Type {
+  explicit SIntType(TypeKind kind) : kind(kind) {
+    assert(kind == TypeKind::Int8 || kind == TypeKind::Int16 ||
+           kind == TypeKind::Int32 || kind == TypeKind::Int64);
+  }
+
+  TypeKind Kind() const override { return this->kind; }
 
 private:
   TypeKind kind;
 };
 
-struct SIntType : Type {
-  explicit SIntType(TypeKind kind) : Type(kind) {
-    assert(kind == TypeKind::Int8 || kind == TypeKind::Int16 ||
-           kind == TypeKind::Int32 || kind == TypeKind::Int64);
-  }
-};
-
-struct UIntType : Type {
-  explicit UIntType(TypeKind kind) : Type(kind) {
+struct UIntType : public Type {
+  explicit UIntType(TypeKind kind) : kind(kind) {
     assert(kind == TypeKind::UInt8 || kind == TypeKind::UInt16 ||
            kind == TypeKind::UInt32 || kind == TypeKind::UInt64);
   }
+
+  TypeKind Kind() const override { return this->kind; }
+
+private:
+  TypeKind kind;
 };
 
-struct FloatType : Type {
-  explicit FloatType(TypeKind kind) : Type(kind) {
+struct FloatType : public Type {
+  explicit FloatType(TypeKind kind) : kind(kind) {
     assert(kind == TypeKind::Float32 || kind == TypeKind::Float64);
   }
+
+  TypeKind Kind() const override { return this->kind; }
+
+private:
+  TypeKind kind;
 };
 
-struct BoolType : Type {
-  explicit BoolType() : Type(TypeKind::Bool) {}
+struct BoolType : public Type {
+  explicit BoolType() {}
+
+  TypeKind Kind() const override { return TypeKind::Bool; }
 };
 
-struct CharType : Type {
-  explicit CharType() : Type(TypeKind::Char) {}
+struct CharType : public Type {
+  explicit CharType() {}
+
+  TypeKind Kind() const override { return TypeKind::Char; }
 };
 
-struct StrType : Type {
-  explicit StrType() : Type(TypeKind::Str) {}
+struct StrType : public Type {
+  explicit StrType() {}
+
+  TypeKind Kind() const override { return TypeKind::Str; }
 };
 
-struct TypeNode;
+struct SliceType;
+struct ArrayType;
+struct RefType;
+struct PointerType;
 
-struct SliceType : Type {
-  explicit SliceType(std::shared_ptr<Type> type)
-      : Type(TypeKind::Slice), type(std::move(type)) {}
+struct TypeNode {
+public:
+  TypeNode() = delete;
 
+  template <typename T> explicit TypeNode(T value) : value(value) {}
+
+  TypeKind Kind() const { return value->Kind(); }
+  auto Value() const { return value; }
+
+  auto AsSInt() const { return (SIntType *)value; }
+
+  auto AsUInt() const { return (UIntType *)value; }
+
+  auto AsFloat() const { return (FloatType *)value; }
+
+  auto AsBool() const { return (BoolType *)value; }
+
+  auto AsChar() const { return (CharType *)value; }
+
+  auto AsStr() const { return (StrType *)value; }
+
+  auto AsSlice() const { return (SliceType *)value; }
+
+  auto AsArray() const { return (ArrayType *)value; }
+
+  auto AsRef() const { return (RefType *)value; }
+
+  auto AsPointer() const { return (PointerType *)value; }
+
+private:
+  Type *value;
+};
+
+struct SliceType : public Type {
+  explicit SliceType(const TypeNode &type)
+      : type(std::make_shared<TypeNode>(type)) {}
+
+  TypeKind Kind() const override { return TypeKind::Slice; }
   auto Inner() const { return this->type; }
 
 private:
-  std::shared_ptr<Type> type;
+  std::shared_ptr<TypeNode> type;
 };
 
-struct ArrayType : Type {
-  explicit ArrayType(std::shared_ptr<Type> type, uint64_t size)
-      : Type(TypeKind::Array), type(std::move(type)), size(size) {}
+struct ArrayType : public Type {
+  ArrayType(const TypeNode &type, uint64_t size)
+      : type(std::make_shared<TypeNode>(type)), size(size) {}
 
+  TypeKind Kind() const override { return TypeKind::Array; }
   auto Inner() const { return this->type; }
   auto Size() const { return this->size; }
 
 private:
-  std::shared_ptr<Type> type;
+  std::shared_ptr<TypeNode> type;
   uint64_t size;
 };
 
-struct RefType : Type {
-  explicit RefType(std::shared_ptr<Type> type)
-      : Type(TypeKind::Ref), type(std::move(type)) {}
+struct RefType : public Type {
+  explicit RefType(const TypeNode &type)
+      : type(std::make_shared<TypeNode>(type)) {}
 
+  TypeKind Kind() const override { return TypeKind::Ref; }
   auto Inner() const { return this->type; }
 
 private:
-  std::shared_ptr<Type> type;
+  std::shared_ptr<TypeNode> type;
 };
 
-struct PointerType : Type {
-  explicit PointerType(std::shared_ptr<Type> type)
-      : Type(TypeKind::Pointer), type(std::move(type)) {}
+struct PointerType : public Type {
+  explicit PointerType(const TypeNode &type)
+      : type(std::make_shared<TypeNode>(type)) {}
 
+  TypeKind Kind() const override { return TypeKind::Pointer; }
   auto Inner() const { return this->type; }
 
 private:
-  std::shared_ptr<Type> type;
+  std::shared_ptr<TypeNode> type;
 };
 
-struct TypeNode {
-  TypeNode() = delete;
-
-  template <typename T>
-  explicit TypeNode(T value): value(std::make_shared<Type>(value)) {}
-
-  TypeKind Kind() const { return value->Kind(); }
-  std::shared_ptr<Type> Value() const { return value; }
-
-  auto AsSInt() const -> std::shared_ptr<SIntType> {
-    return std::static_pointer_cast<SIntType>(value);
-  }
-
-  auto AsUInt() const -> std::shared_ptr<UIntType> {
-    return std::static_pointer_cast<UIntType>(value);
-  }
-
-  auto AsFloat() const -> std::shared_ptr<FloatType> {
-    return std::static_pointer_cast<FloatType>(value);
-  }
-
-  auto AsBool() const -> std::shared_ptr<BoolType> {
-    return std::static_pointer_cast<BoolType>(value);
-  }
-
-  auto AsChar() const -> std::shared_ptr<CharType> {
-    return std::static_pointer_cast<CharType>(value);
-  }
-
-  auto AsStr() const -> std::shared_ptr<StrType> {
-    return std::static_pointer_cast<StrType>(value);
-  }
-
-  auto AsSlice() const -> std::shared_ptr<SliceType> {
-    return std::static_pointer_cast<SliceType>(value);
-  }
-
-  auto AsArray() const -> std::shared_ptr<ArrayType> {
-    return std::static_pointer_cast<ArrayType>(value);
-  }
-
-  auto AsRef() const -> std::shared_ptr<RefType> {
-    return std::static_pointer_cast<RefType>(value);
-  }
-
-  auto AsPointer() const -> std::shared_ptr<PointerType> {
-    return std::static_pointer_cast<PointerType>(value);
-  }
-
-private:
-  std::shared_ptr<Type> value;
-};
-
-ParseResult<TypeNode> ParseType(Parser &parser);
+ParseResult<TypeNode *> ParseType(Parser &parser);
 
 } // namespace aatbe::parser
 

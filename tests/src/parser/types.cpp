@@ -106,7 +106,7 @@ TEST(TypeParser, Slice) {
 
   EXPECT_TRUE(slice);
   EXPECT_EQ(slice.Kind(), TypeKind::Slice);
-  EXPECT_EQ(slice.Node().AsSlice()->Inner()->Kind(), TypeKind::Int8);
+  EXPECT_EQ(Dig(slice, Slice, Inner)->Kind(), TypeKind::Int8);
 }
 
 TEST(TypeParser, Array) {
@@ -117,12 +117,12 @@ TEST(TypeParser, Array) {
 
   EXPECT_TRUE(array);
   EXPECT_EQ(array.Kind(), TypeKind::Array);
-  EXPECT_EQ(array.Node().AsArray()->Inner()->Kind(), TypeKind::Int8);
-  EXPECT_EQ(array.Node().AsArray()->Size(), 128);
+  EXPECT_EQ(Dig(array, Array, Inner)->Kind(), TypeKind::Int8);
+  EXPECT_EQ(Dig(array, Array, Size), 128);
 }
 
 TEST(TypeParser, Ref) {
-  auto tokens = makeTokens("&int8 &&str");
+  auto tokens = makeTokens("ref int8 ref ref str");
   Parser parser(tokens);
 
   auto ref = ParseType(parser);
@@ -130,11 +130,11 @@ TEST(TypeParser, Ref) {
 
   EXPECT_TRUE(ref);
   EXPECT_EQ(ref.Kind(), TypeKind::Ref);
-  EXPECT_EQ(ref.Node().AsRef()->Inner()->Kind(), TypeKind::Int8);
+  EXPECT_EQ(Dig(ref, Ref, Inner)->Kind(), TypeKind::Int8);
 
   EXPECT_TRUE(refRef);
   EXPECT_EQ(refRef.Kind(), TypeKind::Ref);
-  EXPECT_EQ(refRef.Node().AsRef()->Inner()->Kind(), TypeKind::Ref);
+  EXPECT_EQ(Dig(refRef, Ref, Inner)->Kind(), TypeKind::Ref);
 }
 
 TEST(TypeParser, Pointer) {
@@ -146,10 +146,10 @@ TEST(TypeParser, Pointer) {
 
   EXPECT_TRUE(pointer);
   EXPECT_EQ(pointer.Kind(), TypeKind::Pointer);
-  EXPECT_EQ(pointer.Node().AsPointer()->Inner()->Kind(), TypeKind::Int8);
+  EXPECT_EQ(Dig(pointer, Pointer, Inner)->Kind(), TypeKind::Int8);
 
   EXPECT_TRUE(pointerPointer);
   EXPECT_EQ(pointerPointer.Kind(), TypeKind::Pointer);
-  EXPECT_EQ(pointerPointer.Node().AsPointer()->Inner()->Kind(),
+  EXPECT_EQ(Dig(pointerPointer, Pointer, Inner)->Kind(),
             TypeKind::Pointer);
 }

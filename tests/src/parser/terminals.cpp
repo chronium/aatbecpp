@@ -4,6 +4,7 @@
 
 #include <gtest/gtest.h>
 #include <parser/parser.hpp>
+#include <parser/terminal.hpp>
 
 #include <vector>
 
@@ -17,8 +18,8 @@ TEST(TerminalParser, Boolean) {
   auto tokens = makeTokens("true false");
   Parser parser(tokens);
 
-  auto true_atom = parser.ParseTerminal();
-  auto false_atom = parser.ParseTerminal();
+  auto true_atom = ParseTerminal(parser);
+  auto false_atom = ParseTerminal(parser);
 
   EXPECT_TRUE(true_atom);
   EXPECT_EQ(true_atom.Kind(), TerminalKind::Boolean);
@@ -33,9 +34,9 @@ TEST(TerminalParser, Integer) {
   auto tokens = makeTokens("1234 -267 0x1234");
   Parser parser(tokens);
 
-  auto one = parser.ParseTerminal();
-  auto two = parser.ParseTerminal();
-  auto three = parser.ParseTerminal();
+  auto one = ParseTerminal(parser);
+  auto two = ParseTerminal(parser);
+  auto three = ParseTerminal(parser);
 
   EXPECT_TRUE(one);
   EXPECT_EQ(one.Kind(), TerminalKind::Integer);
@@ -54,9 +55,9 @@ TEST(TerminalParser, Char) {
   auto tokens = makeTokens("'a' '\\n' '\\t'");
   Parser parser(tokens);
 
-  auto a = parser.ParseTerminal();
-  auto b = parser.ParseTerminal();
-  auto c = parser.ParseTerminal();
+  auto a = ParseTerminal(parser);
+  auto b = ParseTerminal(parser);
+  auto c = ParseTerminal(parser);
 
   EXPECT_TRUE(a);
   EXPECT_EQ(a.Kind(), TerminalKind::Character);
@@ -75,9 +76,9 @@ TEST(TerminalParser, String) {
   auto tokens = makeTokens("\"hello\" \"world\" \"\\\\\\n\"");
   Parser parser(tokens);
 
-  auto a = parser.ParseTerminal();
-  auto b = parser.ParseTerminal();
-  auto c = parser.ParseTerminal();
+  auto a = ParseTerminal(parser);
+  auto b = ParseTerminal(parser);
+  auto c = ParseTerminal(parser);
 
   EXPECT_TRUE(a);
   EXPECT_EQ(a.Kind(), TerminalKind::String);
@@ -96,9 +97,9 @@ TEST(TerminalParser, Identifier) {
   auto tokens = makeTokens("hello world _hello");
   Parser parser(tokens);
 
-  auto a = parser.ParseTerminal();
-  auto b = parser.ParseTerminal();
-  auto c = parser.ParseTerminal();
+  auto a = ParseTerminal(parser);
+  auto b = ParseTerminal(parser);
+  auto c = ParseTerminal(parser);
 
   EXPECT_TRUE(a);
   EXPECT_EQ(a.Kind(), TerminalKind::Identifier);

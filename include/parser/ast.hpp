@@ -44,19 +44,15 @@ private:
 struct ModuleStatement {
   ModuleStatement() = delete;
 
-  template <typename T>
-  explicit ModuleStatement(T value)
-      : value(std::make_shared<T>(std::move(value))) {}
+  template <typename T> explicit ModuleStatement(T value) : value(value) {}
 
   auto Value() { return value; }
   auto Kind() { return value->Kind(); }
 
-  auto AsFunction() {
-    return std::static_pointer_cast<FunctionStatement>(value);
-  }
+  auto AsFunction() { return (FunctionStatement *)value; }
 
 private:
-  std::shared_ptr<ModuleStatementNode> value;
+  ModuleStatementNode *value;
 };
 
 struct ModuleNode {

@@ -6,7 +6,6 @@
 
 #include <algorithm>
 #include <cstring>
-#include <functional>
 #include <memory>
 #include <string>
 #include <vector>
@@ -55,8 +54,7 @@ std::vector<std::string> keywords = {
     "as",     "fn",     "if",     "in",       "for",    "use",
     "val",    "var",    "else",   "enum",     "then",   "from",
     "type",   "break",  "const",  "while",    "global", "return",
-    "struct", "export", "module", "continue",
-};
+    "struct", "export", "module", "continue", "ref"};
 
 Lexer::Lexer(std::shared_ptr<SrcFile> file)
     : file(std::move(file)), index(0), last_index(0) {

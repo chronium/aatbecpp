@@ -2,9 +2,12 @@
 // Created by chronium on 18.08.2022.
 //
 
+#include <cassert>
+
 #include <lexer/lexer.hpp>
 #include <parser/ast.hpp>
 #include <parser/parser.hpp>
+#include <parser/terminal.hpp>
 
 using namespace aatbe::lexer;
 using namespace aatbe::parser;
@@ -30,31 +33,31 @@ auto Parser::ReadKeyword(const char *keyword) {
   return this->PeekKeyword(keyword) ? this->Read() : std::nullopt;
 }
 
-ParseResult<ModuleStatement> Parser::ParseModuleStatement() {
+ParseResult<ModuleStatement *> Parser::ParseModuleStatement() {
   if (ReadKeyword("fn"))
-    return ParserSuccess(ModuleStatement(FunctionStatement("")));
+    return ParserSuccess(new ModuleStatement(new FunctionStatement("")));
 
   return ParserError(ParseErrorKind::UnexpectedToken, "");
 }
 
-ParseResult<TerminalNode> Parser::ParseTerminal() {
-  if (auto token = this->Peek()) {
+ParseResult<TerminalNode *> ParseTerminal(Parser &parser) {
+  if (auto token = parser.Peek()) {
     switch (token->get()->Kind()) {
     case TokenKind::Number:
       return ParserSuccess(
-          TerminalNode(IntegerTerm(this->Read()->get()->ValueI())));
+          new TerminalNode(new IntegerTerm(parser.Read()->get()->ValueI())));
     case TokenKind::Char:
       return ParserSuccess(
-          TerminalNode(CharTerm(this->Read()->get()->ValueS()[0])));
+          new TerminalNode(new CharTerm(parser.Read()->get()->ValueS()[0])));
     case TokenKind::String:
       return ParserSuccess(
-          TerminalNode(StringTerm(this->Read()->get()->ValueS())));
+          new TerminalNode(new StringTerm(parser.Read()->get()->ValueS())));
     case TokenKind::Boolean:
       return ParserSuccess(
-          TerminalNode(BooleanTerm(this->Read()->get()->ValueI())));
+          new TerminalNode(new BooleanTerm(parser.Read()->get()->ValueI())));
     case TokenKind::Identifier:
       return ParserSuccess(
-          TerminalNode(IdentifierTerm(this->Read()->get()->ValueS())));
+          new TerminalNode(new IdentifierTerm(parser.Read()->get()->ValueS())));
     default:
       return ParserError(ParseErrorKind::InvalidToken, "");
     }

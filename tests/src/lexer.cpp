@@ -5,7 +5,6 @@
 #include <gtest/gtest.h>
 
 #include <lexer/lexer.hpp>
-#include <source/source_file.hpp>
 
 #include <vector>
 
@@ -153,7 +152,7 @@ TEST(Lexer, Symbol) {
 TEST(Lexer, Keyword) {
   auto input = "if else while for break continue return then "
                "fn in var val from use module export "
-               "const global type struct enum as";
+               "const global type struct enum as ref";
   auto lexer = makeLexer(makeFile(input));
 
   std::stringstream stream(input);

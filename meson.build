@@ -16,12 +16,14 @@ sources = [
   'src/source/source_file.cpp',
   'src/parser/parser.cpp',
   'src/parser/type.cpp',
+  'src/parser/expression.cpp',
 ]
 
 tests = [
   'tests/src/lexer.cpp',
   'tests/src/parser/terminals.cpp',
-  'tests/src/parser/types.cpp'
+  'tests/src/parser/types.cpp',
+  'tests/src/parser/expressions.cpp',
 ]
 
 libcomp = shared_library(
@@ -30,7 +32,9 @@ libcomp = shared_library(
   install: true,
   include_directories: [includes],
   dependencies: [llvm_dep],
-  override_options : ['cpp_std=c++20']
+  override_options : ['cpp_std=c++20'],
+  cpp_args: ['-Wall', '-Wextra', '-fsanitize=address'],
+  link_args: ['-fsanitize=address']
 )
 
 comp_dep = declare_dependency(
@@ -44,7 +48,7 @@ exe = executable('lang',
   dependencies: [llvm_dep, comp_dep],
   include_directories: [argparse, includes],
   override_options : ['cpp_std=c++20'],
-  cpp_args: ['--coverage', '-g'],
+  cpp_args: ['--coverage', '-g', '-Wall', '-Wextra'],
   link_args: ['--coverage', '-g'])
 
 project_dep = declare_dependency(

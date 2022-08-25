@@ -5,6 +5,10 @@
 #pragma once
 
 #include <lexer/lexer.hpp>
+#include <source/source_file.hpp>
+
+using namespace aatbe::lexer;
+using namespace aatbe::source;
 
 inline std::vector<Token *> makeTokens(const char *content) {
   auto file = SrcFile::FromString(content);

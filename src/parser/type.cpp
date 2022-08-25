@@ -2,69 +2,72 @@
 // Created by chronium on 22.08.2022.
 //
 
-#include <parser/type.hpp>
 #include <parser/parser.hpp>
-#include <parser/terminals.hpp>
+#include <parser/terminal.hpp>
+#include <parser/type.hpp>
+
+#include <vector>
+#include <variant>
 
 namespace aatbe::parser {
 
-ParseResult<SIntType> ParseSInt(Parser &parser) {
+ParseResult<SIntType *> ParseSInt(Parser &parser) {
   if (parser.Read(TokenKind::Identifier, "int8"))
-    return ParserSuccess(SIntType(TypeKind::Int8));
+    return ParserSuccess(new SIntType(TypeKind::Int8));
   if (parser.Read(TokenKind::Identifier, "int16"))
-    return ParserSuccess(SIntType(TypeKind::Int16));
+    return ParserSuccess(new SIntType(TypeKind::Int16));
   if (parser.Read(TokenKind::Identifier, "int32"))
-    return ParserSuccess(SIntType(TypeKind::Int32));
+    return ParserSuccess(new SIntType(TypeKind::Int32));
   if (parser.Read(TokenKind::Identifier, "int64"))
-    return ParserSuccess(SIntType(TypeKind::Int64));
+    return ParserSuccess(new SIntType(TypeKind::Int64));
 
   return ParserError(ParseErrorKind::UnexpectedToken, "");
 }
 
-ParseResult<UIntType> ParseUInt(Parser &parser) {
+ParseResult<UIntType *> ParseUInt(Parser &parser) {
   if (parser.Read(TokenKind::Identifier, "uint8"))
-    return ParserSuccess(UIntType(TypeKind::UInt8));
+    return ParserSuccess(new UIntType(TypeKind::UInt8));
   if (parser.Read(TokenKind::Identifier, "uint16"))
-    return ParserSuccess(UIntType(TypeKind::UInt16));
+    return ParserSuccess(new UIntType(TypeKind::UInt16));
   if (parser.Read(TokenKind::Identifier, "uint32"))
-    return ParserSuccess(UIntType(TypeKind::UInt32));
+    return ParserSuccess(new UIntType(TypeKind::UInt32));
   if (parser.Read(TokenKind::Identifier, "uint64"))
-    return ParserSuccess(UIntType(TypeKind::UInt64));
+    return ParserSuccess(new UIntType(TypeKind::UInt64));
 
   return ParserError(ParseErrorKind::UnexpectedToken, "");
 }
 
-ParseResult<FloatType> ParseFloat(Parser &parser) {
+ParseResult<FloatType *> ParseFloat(Parser &parser) {
   if (parser.Read(TokenKind::Identifier, "float32"))
-    return ParserSuccess(FloatType(TypeKind::Float32));
+    return ParserSuccess(new FloatType(TypeKind::Float32));
   if (parser.Read(TokenKind::Identifier, "float64"))
-    return ParserSuccess(FloatType(TypeKind::Float64));
+    return ParserSuccess(new FloatType(TypeKind::Float64));
 
   return ParserError(ParseErrorKind::UnexpectedToken, "");
 }
 
-ParseResult<BoolType> ParseBool(Parser &parser) {
+ParseResult<BoolType *> ParseBool(Parser &parser) {
   if (parser.Read(TokenKind::Identifier, "bool"))
-    return ParserSuccess(BoolType());
+    return ParserSuccess(new BoolType());
 
   return ParserError(ParseErrorKind::UnexpectedToken, "");
 }
 
-ParseResult<CharType> ParseChar(Parser &parser) {
+ParseResult<CharType *> ParseChar(Parser &parser) {
   if (parser.Read(TokenKind::Identifier, "char"))
-    return ParserSuccess(CharType());
+    return ParserSuccess(new CharType());
 
   return ParserError(ParseErrorKind::UnexpectedToken, "");
 }
 
-ParseResult<StrType> ParseString(Parser &parser) {
+ParseResult<StrType *> ParseString(Parser &parser) {
   if (parser.Read(TokenKind::Identifier, "str"))
-    return ParserSuccess(StrType());
+    return ParserSuccess(new StrType());
 
   return ParserError(ParseErrorKind::UnexpectedToken, "");
 }
 
-ParseResult<SliceType> ParseSlice(Parser &parser) {
+ParseResult<SliceType *> ParseSlice(Parser &parser) {
   if (!parser.Read(TokenKind::Symbol, "["))
     return ParserError(ParseErrorKind::ExpectedToken, "");
 
@@ -76,10 +79,10 @@ ParseResult<SliceType> ParseSlice(Parser &parser) {
   if (!parser.Read(TokenKind::Symbol, "]"))
     return ParserError(ParseErrorKind::ExpectedToken, "");
 
-  return ParserSuccess(SliceType(type.Value()));
+  return ParserSuccess(new SliceType(*type.Node()));
 }
 
-ParseResult<ArrayType> ParseArray(Parser &parser) {
+ParseResult<ArrayType *> ParseArray(Parser &parser) {
   if (!parser.Read(TokenKind::Symbol, "["))
     return ParserError(ParseErrorKind::ExpectedToken, "");
 
@@ -91,7 +94,7 @@ ParseResult<ArrayType> ParseArray(Parser &parser) {
   if (!parser.Read(TokenKind::Symbol, ";"))
     return ParserError(ParseErrorKind::ExpectedToken, "");
 
-  auto size = parser.ParseTerminal();
+  auto size = ParseTerminal(parser);
 
   if (!size)
     return size.Error();
@@ -102,11 +105,11 @@ ParseResult<ArrayType> ParseArray(Parser &parser) {
   if (!parser.Read(TokenKind::Symbol, "]"))
     return ParserError(ParseErrorKind::ExpectedToken, "");
 
-  return ParserSuccess(ArrayType(type.Value(), Unwrap(size, Integer)));
+  return ParserSuccess(new ArrayType(*type.Node(), Unwrap(size, Integer)));
 }
 
-ParseResult<RefType> ParseRef(Parser &parser) {
-  if (!parser.Read(TokenKind::Symbol, "&"))
+ParseResult<RefType *> ParseRef(Parser &parser) {
+  if (!parser.Read(TokenKind::Keyword, "ref"))
     return ParserError(ParseErrorKind::ExpectedToken, "");
 
   auto type = ParseType(parser);
@@ -114,10 +117,10 @@ ParseResult<RefType> ParseRef(Parser &parser) {
   if (!type)
     return type.Error();
 
-  return ParserSuccess(RefType(type.Value()));
+  return ParserSuccess(new RefType(*type.Node()));
 }
 
-ParseResult<PointerType> ParsePointer(Parser &parser) {
+ParseResult<PointerType *> ParsePointer(Parser &parser) {
   if (!parser.Read(TokenKind::Symbol, "*"))
     return ParserError(ParseErrorKind::ExpectedToken, "");
 
@@ -126,49 +129,49 @@ ParseResult<PointerType> ParsePointer(Parser &parser) {
   if (!type)
     return type.Error();
 
-  return ParserSuccess(PointerType(type.Value()));
+  return ParserSuccess(new PointerType(*type.Node()));
 }
 
-ParseResult<TypeNode> ParseType(Parser &parser) {
-  auto sInt = ParseSInt(parser);
+ParseResult<TypeNode *> ParseType(Parser &parser) {
+  auto sInt = parser.Try(ParseSInt);
   if (sInt)
-    return ParserSuccess(TypeNode(sInt.Value()));
+    return ParserSuccess(new TypeNode(sInt.Node()));
 
-  auto uInt = ParseUInt(parser);
+  auto uInt = parser.Try(ParseUInt);
   if (uInt)
-    return ParserSuccess(TypeNode(uInt.Value()));
+    return ParserSuccess(new TypeNode(uInt.Node()));
 
-  auto floatType = ParseFloat(parser);
+  auto floatType = parser.Try(ParseFloat);
   if (floatType)
-    return ParserSuccess(TypeNode(floatType.Value()));
+    return ParserSuccess(new TypeNode(floatType.Node()));
 
-  auto boolType = ParseBool(parser);
+  auto boolType = parser.Try(ParseBool);
   if (boolType)
-    return ParserSuccess(TypeNode(boolType.Value()));
+    return ParserSuccess(new TypeNode(boolType.Node()));
 
-  auto charType = ParseChar(parser);
+  auto charType = parser.Try(ParseChar);
   if (charType)
-    return ParserSuccess(TypeNode(charType.Value()));
+    return ParserSuccess(new TypeNode(charType.Node()));
 
-  auto strType = ParseString(parser);
+  auto strType = parser.Try(ParseString);
   if (strType)
-    return ParserSuccess(TypeNode(strType.Value()));
+    return ParserSuccess(new TypeNode(strType.Node()));
 
-  auto sliceType = ParseSlice(parser);
+  auto sliceType = parser.Try(ParseSlice);
   if (sliceType)
-    return ParserSuccess(TypeNode(sliceType.Value()));
+    return ParserSuccess(new TypeNode(sliceType.Node()));
 
-  auto arrayType = ParseArray(parser);
+  auto arrayType = parser.Try(ParseArray);
   if (arrayType)
-    return ParserSuccess(TypeNode(arrayType.Value()));
+    return ParserSuccess(new TypeNode(arrayType.Node()));
 
-  auto refType = ParseRef(parser);
+  auto refType = parser.Try(ParseRef);
   if (refType)
-    return ParserSuccess(TypeNode(refType.Value()));
+    return ParserSuccess(new TypeNode(refType.Node()));
 
-  auto pointerType = ParsePointer(parser);
+  auto pointerType = parser.Try(ParsePointer);
   if (pointerType)
-    return ParserSuccess(TypeNode(pointerType.Value()));
+    return ParserSuccess(new TypeNode(pointerType.Node()));
 
   return ParserError(ParseErrorKind::ExpectedType, "");
 }

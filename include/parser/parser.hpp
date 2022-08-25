@@ -1,23 +1,27 @@
 #pragma once
 
-#include <memory>
-
-#include "terminals.hpp"
-#include <concepts>
 #include <lexer/lexer.hpp>
+#include <parser/ast.hpp>
+
+#include <memory>
+#include <concepts>
 #include <optional>
 #include <utility>
+#include <vector>
+#include <variant>
 
 using namespace aatbe::lexer;
 
 namespace aatbe::parser {
 
-#define Unwrap(NODE, Type) NODE.Node().As##Type()->Value()
+#define Indirect(NODE, Type) NODE->Value()->As##Type()->Value()
+#define Unwrap(NODE, Type) NODE.Node()->As##Type()->Value()
+#define Dig(NODE, Type, What) NODE.Node()->As##Type()->What()
 
 template <typename T>
 concept AstNode = requires(T t) {
-                    t.Value();
-                    t.Kind();
+                    t->Value();
+                    t->Kind();
                   };
 
 enum class ParseErrorKind {
@@ -25,7 +29,11 @@ enum class ParseErrorKind {
   UnexpectedToken,
   UnexpectedEof,
   ExpectedToken,
-  ExpectedType
+  ExpectedType,
+  ExpectedTerminal,
+  ExpectedSymbol,
+  InvalidOperator,
+  ExpectedExpression,
 };
 
 // ParserError is a simple error class that holds the error kind and the
@@ -52,7 +60,8 @@ template <typename Tout> struct ParserSuccess {
 };
 
 // ParseResult type is either a ParserError or a ParserSuccess
-template <AstNode Tout> struct ParseResult {
+template <AstNode Tout> class ParseResult {
+public:
   using SuccessType = ParserSuccess<Tout>;
   using ErrorType = ParserError;
   using Type = std::variant<SuccessType, ErrorType>;
@@ -64,10 +73,10 @@ template <AstNode Tout> struct ParseResult {
   }
   // Kind
   auto Node() { return std::get<SuccessType>(value).Value(); }
-  auto Kind() { return std::get<SuccessType>(value).Value().Kind(); }
-  auto Value() { return std::get<SuccessType>(value).Value().Value(); }
+  auto Kind() { return std::get<SuccessType>(value).Value()->Kind(); }
+  auto Value() { return std::get<SuccessType>(value).Value()->Value(); }
   ErrorType &Error() { return std::get<ErrorType>(value); }
-  const SuccessType &Value() const { return std::get<SuccessType>(value); }
+  //const SuccessType &Value() const { return std::get<SuccessType>(value); }
   const ErrorType &Error() const { return std::get<ErrorType>(value); }
 };
 
@@ -118,17 +127,16 @@ public:
     return this->Peek(kind, valueS) ? this->Read() : std::nullopt;
   }
 
-  ParseResult<TerminalNode> ParseTerminal();
-  ParseResult<ModuleStatement> ParseModuleStatement();
+  ParseResult<ModuleStatement *> ParseModuleStatement();
 
-  std::unique_ptr<ModuleNode> Parse();
+  std::unique_ptr<ModuleNode *> Parse();
 
   Memo Snapshot() const { return Memo{index}; }
   void Restore(Memo memo) { index = memo.Index(); }
 
-  template <typename F> auto Fallible(F f) {
+  template <typename F> auto Try(F f) {
     auto memo = Snapshot();
-    auto result = f();
+    auto result = f(*this);
 
     if (!result)
       Restore(memo);
