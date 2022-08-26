@@ -54,7 +54,7 @@ std::vector<std::string> keywords = {
     "as",     "fn",     "if",     "in",       "for",    "use",
     "val",    "var",    "else",   "enum",     "then",   "from",
     "type",   "break",  "const",  "while",    "global", "return",
-    "struct", "export", "module", "continue", "ref"};
+    "struct", "export", "module", "continue", "ref",    "ptr"};
 
 Lexer::Lexer(std::shared_ptr<SrcFile> file)
     : file(std::move(file)), index(0), last_index(0) {
@@ -209,7 +209,7 @@ Token *Lexer::Next() {
     return Lexer::makeToken(TokenKind::String, new std::string(valueS));
   }
 
-  for (const auto& symbol : symbols) {
+  for (const auto &symbol : symbols) {
     if (read_kw(symbol.c_str())) {
       return Lexer::makeToken(TokenKind::Symbol, new std::string(symbol));
     }
@@ -230,6 +230,21 @@ Token *Lexer::Next() {
 
   return Lexer::makeToken(TokenKind::Unexpected,
                           new std::string(std::to_string(this->read())));
+}
+
+std::vector<Token *> Lexer::Lex() {
+  std::vector<Token *> tokens;
+
+  while (true) {
+    auto tok = this->Next();
+
+    if (tok->Kind() == TokenKind::EndOfFile)
+      break;
+
+    tokens.push_back(tok);
+  }
+
+  return tokens;
 }
 
 } // namespace aatbe::lexer

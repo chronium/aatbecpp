@@ -8,6 +8,7 @@
 #include <parser/ast.hpp>
 #include <parser/parser.hpp>
 #include <parser/terminal.hpp>
+#include <parser/type.hpp>
 
 using namespace aatbe::lexer;
 using namespace aatbe::parser;
@@ -33,9 +34,61 @@ auto Parser::ReadKeyword(const char *keyword) {
   return this->PeekKeyword(keyword) ? this->Read() : std::nullopt;
 }
 
-ParseResult<ModuleStatementNode *> Parser::ParseModuleStatement() {
-  if (ReadKeyword("fn"))
-    return ParserSuccess(new ModuleStatementNode(new FunctionStatement("")));
+ParseResult<ParameterBinding *> ParseParameter(Parser &parser) {
+  if (auto token = parser.Peek()) {
+    if (token->get()->Kind() == TokenKind::Identifier) {
+      auto name = parser.Read()->get()->ValueS();
+      if (parser.Read(TokenKind::Symbol, ":")) {
+        if (auto type = ParseType(parser))
+          return type.WrapWith<ParameterBinding>(name);
+      }
+    }
+  }
+  return ParserError(ParseErrorKind::UnexpectedToken, "");
+}
+
+ParseResult<IdentifierTerm *> ParseIdentifier(Parser &parser) {
+  if (auto token = parser.Peek()) {
+    if (token->get()->Kind() == TokenKind::Identifier)
+      return ParserSuccess(new IdentifierTerm(parser.Read()->get()->ValueS()));
+  }
+  return ParserError(ParseErrorKind::UnexpectedToken, "");
+}
+
+ParseResult<FunctionStatement *> ParseFunction(Parser &parser) {
+  if (!parser.Read(TokenKind::Keyword, "fn"))
+    return ParserError(ParseErrorKind::ExpectedToken, "");
+
+  ErrorOrContinue(name, ParseIdentifier(parser));
+
+  auto argList = Deffer(new ParameterList(parser.DelimitedBy(Deffer(ParseParameter(parser).Node()),
+                                 TokenKind::Symbol, ",")));
+
+  ParseResult<ParameterList *> args = ParserSuccess(new ParameterList(std::vector<ParameterBinding *> {}));
+  if (parser.Peek("(", 0) && parser.Peek(")", 1)) {
+    parser.Read();
+    parser.Read();
+  }
+  else if (!parser.Peek(TokenKind::Symbol, "->") && !parser.Peek(TokenKind::Symbol, "="))
+    args = parser.SurroundedBy(argList, TokenKind::Symbol, "(", TokenKind::Symbol, ")");
+
+  auto returnType = new TypeNode(new UnitType());
+
+  if (parser.Read(TokenKind::Symbol, "->")) {
+    if (auto type = ParseType(parser))
+      returnType = type.Node();
+    else
+      return ParserError(ParseErrorKind::ExpectedType, "");
+  }
+
+  if (!parser.Read(TokenKind::Symbol, "="))
+    return ParserError(ParseErrorKind::ExpectedToken, "");
+
+  return ParserSuccess(new FunctionStatement(name.Node()->Value(), args.Node(), returnType));
+}
+
+ParseResult<ModuleStatementNode *> ParseModuleStatement(Parser &parser) {
+  TryReturn(parser.Try(ParseFunction).WrapWith<ModuleStatementNode>());
 
   return ParserError(ParseErrorKind::UnexpectedToken, "");
 }

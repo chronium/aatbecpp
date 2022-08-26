@@ -5,6 +5,7 @@
 #include <gtest/gtest.h>
 
 #include <parser/type.hpp>
+#include <parser/parser.hpp>
 
 #include "base.hpp"
 
@@ -138,7 +139,7 @@ TEST(TypeParser, Ref) {
 }
 
 TEST(TypeParser, Pointer) {
-  auto tokens = makeTokens("*int8 **str");
+  auto tokens = makeTokens("ptr int8 ptr ptr str");
   Parser parser(tokens);
 
   auto pointer = ParseType(parser);
@@ -152,4 +153,14 @@ TEST(TypeParser, Pointer) {
   EXPECT_EQ(pointerPointer.Kind(), TypeKind::Pointer);
   EXPECT_EQ(Dig(pointerPointer, Pointer, Inner)->Kind(),
             TypeKind::Pointer);
+}
+
+TEST(TypeParser, Unit) {
+  auto tokens = makeTokens("()");
+  Parser parser(tokens);
+
+  auto unit = ParseType(parser);
+
+  EXPECT_TRUE(unit);
+  EXPECT_EQ(unit.Kind(), TypeKind::Unit);
 }

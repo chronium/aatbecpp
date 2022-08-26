@@ -41,6 +41,7 @@ template <typename T>
 concept AstNode = requires(T t) {
                     t->Value();
                     t->Kind();
+                    { t->Format() } -> std::convertible_to<std::string>;
                   };
 
 enum class ParseErrorKind {
@@ -84,18 +85,19 @@ public:
   using SuccessType = ParserSuccess<Tout>;
   using ErrorType = ParserError;
   using Type = std::variant<SuccessType, ErrorType>;
-  Type value;
+
   ParseResult(SuccessType success) : value(success) {}
   ParseResult(ErrorType error) : value(error) {}
   explicit operator bool() const {
     return std::holds_alternative<SuccessType>(value);
   }
-  // Kind
+
   auto Node() { return std::get<SuccessType>(value).Value(); }
   auto Kind() { return std::get<SuccessType>(value).Value()->Kind(); }
   auto Value() { return std::get<SuccessType>(value).Value()->Value(); }
+  auto Format() { return std::get<SuccessType>(value).Value()->Format(); }
   ErrorType &Error() { return std::get<ErrorType>(value); }
-  // const SuccessType &Value() const { return std::get<SuccessType>(value); }
+  const SuccessType &Value() const { return std::get<SuccessType>(value); }
   const ErrorType &Error() const { return std::get<ErrorType>(value); }
 
   template <typename T, typename... Args>
@@ -105,6 +107,8 @@ public:
     else
       return this->Error();
   }
+private:
+  Type value;
 };
 
 class Parser {
@@ -119,7 +123,7 @@ public:
     uint64_t index;
   };
 
-  Parser(std::vector<Token *> tokens) : tokens(std::move(tokens)) {}
+  explicit Parser(std::vector<Token *> tokens) : tokens(std::move(tokens)) {}
   Parser(Parser &&) = default;
   Parser(const Parser &) = delete;
   Parser &operator=(Parser &&) = delete;
@@ -143,8 +147,8 @@ public:
 
     return false;
   }
-  auto Peek(const char *valueS) {
-    if (auto token = this->Peek())
+  auto Peek(const char *valueS, off_t offset = 0) {
+    if (auto token = this->Peek(offset))
       return token->get()->ValueS() == valueS;
 
     return false;
@@ -163,9 +167,7 @@ public:
     return this->Peek(valueS) ? this->Read() : std::nullopt;
   }
 
-  ParseResult<ModuleStatementNode *> ParseModuleStatement();
-
-  std::unique_ptr<ModuleNode *> Parse();
+  //std::unique_ptr<ModuleNode *> Parse();
 
   Memo Snapshot() const { return Memo{index}; }
   void Restore(Memo memo) { index = memo.Index(); }
@@ -219,5 +221,8 @@ private:
   std::vector<Token *> tokens;
   size_t index = 0;
 };
+
+ParseResult<ModuleStatementNode *> ParseModuleStatement(Parser &parser);
+ParseResult<TypeNode *> ParseType(Parser &parser);
 
 } // namespace aatbe::parser

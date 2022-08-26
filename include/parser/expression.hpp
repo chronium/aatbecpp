@@ -27,14 +27,16 @@ struct Expression {
   virtual ~Expression() = default;
 
   virtual ExpressionKind Kind() const = 0;
+  virtual std::string Format() const = 0;
 };
 
 struct AtomExpression : public Expression {
-  explicit AtomExpression(const TerminalNode *terminal)
-      : terminal(terminal) {}
+  explicit AtomExpression(const TerminalNode *terminal) : terminal(terminal) {}
 
   auto Value() const { return this->terminal; }
-  ExpressionKind Kind() const { return ExpressionKind::Atom; }
+  ExpressionKind Kind() const override { return ExpressionKind::Atom; }
+
+  std::string Format() const override { return this->terminal->Format(); }
 
 private:
   const TerminalNode *terminal;
@@ -52,6 +54,7 @@ struct ExpressionNode {
 
   auto Value() const { return value; }
   auto Kind() const { return value->Kind(); }
+  auto Format() const { return value->Format(); }
 
   auto AsUnary() { return (UnaryExpression *)value; }
 
@@ -82,10 +85,27 @@ struct UnaryExpression : public Expression {
   UnaryExpression(const ExpressionNode *expr, UnaryKind opKind)
       : opKind(opKind), expr(expr) {}
 
+  std::string Format() const override {
+    switch (opKind) {
+    case UnaryKind::Negation:
+      return "-" + expr->Format();
+    case UnaryKind::LogicalNot:
+      return "!" + expr->Format();
+    case UnaryKind::BitwiseNot:
+      return "~" + expr->Format();
+    case UnaryKind::AddressOf:
+      return "&" + expr->Format();
+    case UnaryKind::Dereference:
+      return "*" + expr->Format();
+    default:
+      return "unknown unop";
+    }
+  }
+
   UnaryKind OpKind() const { return this->opKind; }
 
   auto Value() const { return this->expr; }
-  ExpressionKind Kind() const { return ExpressionKind::Unary; }
+  ExpressionKind Kind() const override { return ExpressionKind::Unary; }
 
 private:
   UnaryKind opKind;
@@ -119,13 +139,56 @@ struct BinaryExpression : public Expression {
                    std::shared_ptr<ExpressionNode> right)
       : left(std::move(left)), right(std::move(right)) {}
 
+  std::string Format() const override {
+    switch (opKind) {
+    case BinaryKind::Addition:
+      return left->Format() + " + " + right->Format();
+    case BinaryKind::Subtraction:
+      return left->Format() + " - " + right->Format();
+    case BinaryKind::Multiplication:
+      return left->Format() + " * " + right->Format();
+    case BinaryKind::Division:
+      return left->Format() + " / " + right->Format();
+    case BinaryKind::Modulo:
+      return left->Format() + " % " + right->Format();
+    case BinaryKind::BitwiseAnd:
+      return left->Format() + " & " + right->Format();
+    case BinaryKind::BitwiseOr:
+      return left->Format() + " | " + right->Format();
+    case BinaryKind::BitwiseXor:
+      return left->Format() + " ^ " + right->Format();
+    case BinaryKind::BitwiseLeftShift:
+      return left->Format() + " << " + right->Format();
+    case BinaryKind::BitwiseRightShift:
+      return left->Format() + " >> " + right->Format();
+    case BinaryKind::LogicalAnd:
+      return left->Format() + " && " + right->Format();
+    case BinaryKind::LogicalOr:
+      return left->Format() + " || " + right->Format();
+    case BinaryKind::Equal:
+      return left->Format() + " == " + right->Format();
+    case BinaryKind::NotEqual:
+      return left->Format() + " != " + right->Format();
+    case BinaryKind::LessThan:
+      return left->Format() + " < " + right->Format();
+    case BinaryKind::LessThanOrEqual:
+      return left->Format() + " <= " + right->Format();
+    case BinaryKind::GreaterThan:
+      return left->Format() + " > " + right->Format();
+    case BinaryKind::GreaterThanOrEqual:
+      return left->Format() + " >= " + right->Format();
+    default:
+      return "unknown binop";
+    }
+  }
+
   BinaryKind OpKind() const { return this->opKind; }
 
   auto Value() const { return std::make_tuple(this->left, this->right); }
 
   auto Left() const { return this->left; }
   auto Right() const { return this->right; }
-  ExpressionKind Kind() const { return ExpressionKind::Binary; }
+  ExpressionKind Kind() const override { return ExpressionKind::Binary; }
 
 private:
   BinaryKind opKind;
@@ -137,9 +200,18 @@ struct TupleExpression : public Expression {
   explicit TupleExpression(std::vector<ExpressionNode *> elements)
       : elements(std::move(elements)) {}
 
+  std::string Format() const override {
+    std::string result = "(";
+    for (auto element : elements) {
+      result += element->Format() + ", ";
+    }
+    result += ")";
+    return result;
+  }
+
   auto Size() const { return this->elements.size(); }
   std::vector<ExpressionNode *> Value() const { return this->elements; }
-  ExpressionKind Kind() const { return ExpressionKind::Tuple; }
+  ExpressionKind Kind() const override { return ExpressionKind::Tuple; }
 
 private:
   std::vector<ExpressionNode *> elements;
@@ -150,10 +222,14 @@ struct CallExpression : public Expression {
   CallExpression(ExpressionNode *callee, ExpressionNode *args)
       : callee(callee), args(args) {}
 
+  std::string Format() const override {
+    return callee->Format() + "(" + args->Format() + ")";
+  }
+
   auto Callee() const { return this->callee; }
   auto Args() const { return this->args; }
   auto Value() const { return std::make_tuple(this->callee, this->args); }
-  ExpressionKind Kind() const { return ExpressionKind::Call; }
+  ExpressionKind Kind() const override { return ExpressionKind::Call; }
 
 private:
   ExpressionNode *callee;

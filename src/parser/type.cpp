@@ -106,10 +106,19 @@ ParseResult<RefType *> ParseRef(Parser &parser) {
 }
 
 ParseResult<PointerType *> ParsePointer(Parser &parser) {
-  if (!parser.Read(TokenKind::Symbol, "*"))
+  if (!parser.Read(TokenKind::Keyword, "ptr"))
     return ParserError(ParseErrorKind::ExpectedToken, "");
 
   TryReturnOrError(ParseType(parser).WrapWith<PointerType>());
+}
+
+ParseResult<UnitType *> ParseUnit(Parser &parser) {
+  if (!parser.Read(TokenKind::Symbol, "("))
+    return ParserError(ParseErrorKind::ExpectedToken, "");
+  if (!parser.Read(TokenKind::Symbol, ")"))
+    return ParserError(ParseErrorKind::ExpectedToken, "");
+
+  return ParserSuccess(new UnitType());
 }
 
 ParseResult<TypeNode *> ParseType(Parser &parser) {
@@ -123,6 +132,7 @@ ParseResult<TypeNode *> ParseType(Parser &parser) {
   TryReturn(parser.Try(ParseArray).WrapWith<TypeNode>());
   TryReturn(parser.Try(ParseRef).WrapWith<TypeNode>());
   TryReturn(parser.Try(ParsePointer).WrapWith<TypeNode>());
+  TryReturn(parser.Try(ParseUnit).WrapWith<TypeNode>());
 
   return ParserError(ParseErrorKind::ExpectedType, "");
 }

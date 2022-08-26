@@ -25,6 +25,7 @@ struct Terminal {
   virtual ~Terminal() = default;
 
   virtual TerminalKind Kind() const = 0;
+  virtual std::string Format() const = 0;
 };
 
 struct BooleanTerm : public Terminal {
@@ -33,6 +34,8 @@ struct BooleanTerm : public Terminal {
 
   bool Value() const { return value; }
   TerminalKind Kind() const override { return this->kind; }
+
+  std::string Format() const override { return value ? "true" : "false"; }
 
 private:
   TerminalKind kind;
@@ -46,6 +49,8 @@ struct IntegerTerm : public Terminal {
   uint64_t Value() const { return value; }
   TerminalKind Kind() const override { return this->kind; }
 
+  std::string Format() const override { return std::to_string(value); }
+
 private:
   TerminalKind kind;
   uint64_t value;
@@ -56,6 +61,8 @@ struct CharTerm : public Terminal {
 
   char Value() const { return value; }
   TerminalKind Kind() const override { return this->kind; }
+
+  std::string Format() const override { return std::string("'") + value + "'"; }
 
 private:
   TerminalKind kind;
@@ -69,6 +76,10 @@ struct StringTerm : public Terminal {
   std::string Value() const { return value; }
   TerminalKind Kind() const override { return this->kind; }
 
+  std::string Format() const override {
+    return std::string("\"") + value + "\"";
+  }
+
 private:
   TerminalKind kind;
   std::string value;
@@ -80,6 +91,8 @@ struct IdentifierTerm : public Terminal {
 
   std::string Value() const { return value; }
   TerminalKind Kind() const override { return this->kind; }
+
+  std::string Format() const override { return value; }
 
 private:
   TerminalKind kind;
@@ -93,6 +106,7 @@ struct TerminalNode {
 
   TerminalKind Kind() const { return value->Kind(); }
   auto Value() const { return value; }
+  auto Format() const { return value->Format(); }
 
   auto AsBoolean() const -> BooleanTerm * { return (BooleanTerm *)value; }
 

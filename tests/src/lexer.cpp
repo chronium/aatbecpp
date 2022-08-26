@@ -151,7 +151,7 @@ TEST(Lexer, Symbol) {
 
 TEST(Lexer, Keyword) {
   auto input = "if else while for break continue return then "
-               "fn in var val from use module export "
+               "fn in var val from use module export ptr "
                "const global type struct enum as ref";
   auto lexer = makeLexer(makeFile(input));
 

@@ -4,8 +4,6 @@
 
 #pragma once
 
-#include <parser/parser.hpp>
-
 #include <string>
 #include <vector>
 #include <cassert>
@@ -26,6 +24,7 @@ enum TypeKind {
   Bool,
   Char,
   Str,
+  Unit,
   Array,
   Ref,
   Pointer,
@@ -44,6 +43,7 @@ struct Type {
 
   virtual TypeKind Kind() const = 0;
   virtual TypeKind Value() const { return Kind(); }
+  virtual std::string Format() const = 0;
 };
 
 struct SIntType : public Type {
@@ -53,6 +53,21 @@ struct SIntType : public Type {
   }
 
   TypeKind Kind() const override { return this->kind; }
+
+  std::string Format() const override {
+    switch (kind) {
+    case TypeKind::Int8:
+      return "int8";
+    case TypeKind::Int16:
+      return "int16";
+    case TypeKind::Int32:
+      return "int32";
+    case TypeKind::Int64:
+      return "int64";
+    default:
+      return "int8";
+    }
+  }
 
 private:
   TypeKind kind;
@@ -66,6 +81,21 @@ struct UIntType : public Type {
 
   TypeKind Kind() const override { return this->kind; }
 
+  std::string Format() const override {
+    switch (kind) {
+    case TypeKind::UInt8:
+      return "uint8";
+    case TypeKind::UInt16:
+      return "uint16";
+    case TypeKind::UInt32:
+      return "uint32";
+    case TypeKind::UInt64:
+      return "uint64";
+    default:
+      return "uint8";
+    }
+  }
+
 private:
   TypeKind kind;
 };
@@ -77,6 +107,17 @@ struct FloatType : public Type {
 
   TypeKind Kind() const override { return this->kind; }
 
+  std::string Format() const override {
+    switch (kind) {
+    case TypeKind::Float32:
+      return "float32";
+    case TypeKind::Float64:
+      return "float64";
+    default:
+      return "float32";
+    }
+  }
+
 private:
   TypeKind kind;
 };
@@ -85,18 +126,32 @@ struct BoolType : public Type {
   explicit BoolType() {}
 
   TypeKind Kind() const override { return TypeKind::Bool; }
+
+  std::string Format() const override { return "bool"; }
 };
 
 struct CharType : public Type {
   explicit CharType() {}
 
   TypeKind Kind() const override { return TypeKind::Char; }
+
+  std::string Format() const override { return "char"; }
 };
 
 struct StrType : public Type {
   explicit StrType() {}
 
   TypeKind Kind() const override { return TypeKind::Str; }
+
+  std::string Format() const override { return "str"; }
+};
+
+struct UnitType : public Type {
+  explicit UnitType() {}
+
+  TypeKind Kind() const override { return TypeKind::Unit; }
+
+  std::string Format() const override { return "()"; }
 };
 
 struct SliceType;
@@ -112,6 +167,7 @@ public:
 
   TypeKind Kind() const { return value->Kind(); }
   auto Value() const { return value; }
+  auto Format() const { return "Type(" + value->Format() + ")"; }
 
   auto AsSInt() const { return (SIntType *)value; }
 
@@ -124,6 +180,8 @@ public:
   auto AsChar() const { return (CharType *)value; }
 
   auto AsStr() const { return (StrType *)value; }
+
+  auto AsUnit() const { return (UnitType *)value; }
 
   auto AsSlice() const { return (SliceType *)value; }
 
@@ -138,23 +196,29 @@ private:
 };
 
 struct SliceType : public Type {
-  explicit SliceType(const TypeNode *type)
-      : type(type) {}
+  explicit SliceType(const TypeNode *type) : type(type) {}
 
   TypeKind Kind() const override { return TypeKind::Slice; }
   auto Inner() const { return this->type; }
+
+  std::string Format() const override {
+    return "[" + this->type->Format() + "]";
+  }
 
 private:
   const TypeNode *type;
 };
 
 struct ArrayType : public Type {
-  ArrayType(const TypeNode *type, uint64_t size)
-      : type(type), size(size) {}
+  ArrayType(const TypeNode *type, uint64_t size) : type(type), size(size) {}
 
   TypeKind Kind() const override { return TypeKind::Array; }
   auto Inner() const { return this->type; }
   auto Size() const { return this->size; }
+
+  std::string Format() const override {
+    return "[" + this->type->Format() + "; " + std::to_string(this->size) + "]";
+  }
 
 private:
   const TypeNode *type;
@@ -162,28 +226,28 @@ private:
 };
 
 struct RefType : public Type {
-  explicit RefType(const TypeNode *type)
-      : type(type) {}
+  explicit RefType(const TypeNode *type) : type(type) {}
 
   TypeKind Kind() const override { return TypeKind::Ref; }
   auto Inner() const { return this->type; }
+
+  std::string Format() const override { return "ref " + this->type->Format(); }
 
 private:
   const TypeNode *type;
 };
 
 struct PointerType : public Type {
-  explicit PointerType(const TypeNode *type)
-      : type(type) {}
+  explicit PointerType(const TypeNode *type) : type(type) {}
 
   TypeKind Kind() const override { return TypeKind::Pointer; }
   auto Inner() const { return this->type; }
 
+  std::string Format() const override { return "ptr " + this->type->Format(); }
+
 private:
   const TypeNode *type;
 };
-
-ParseResult<TypeNode *> ParseType(Parser &parser);
 
 } // namespace aatbe::parser
 
