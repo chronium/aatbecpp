@@ -43,22 +43,11 @@ ParseResult<UnaryExpression *> ParseUnary(Parser &parser) {
 }
 
 ParseResult<TupleExpression *> ParseTuple(Parser &parser) {
-  if (!parser.Read(TokenKind::Symbol, "("))
-    return ParserError(ParseErrorKind::ExpectedToken, "");
+  auto exprs = Deffer(new TupleExpression(parser.DelimitedBy(
+      Deffer(ParseExpression(parser).Node()), TokenKind::Symbol, ",")));
 
-  std::vector<ExpressionNode *> exprs;
-  while (true) {
-    auto expr = ParseExpression(parser);
-    if (!expr)
-      return expr.Error();
-    exprs.push_back(expr.Node());
-    if (!parser.Read(TokenKind::Symbol, ","))
-      break;
-  }
-  if (!parser.Read(TokenKind::Symbol, ")"))
-    return ParserError(ParseErrorKind::ExpectedToken, "");
-
-  return ParserSuccess(new TupleExpression(exprs));
+  return parser.SurroundedBy(exprs, TokenKind::Symbol, "(", TokenKind::Symbol,
+                             ")");
 }
 
 ParseResult<ExpressionNode *> ParseExpression(Parser &parser) {

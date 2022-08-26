@@ -31,9 +31,11 @@ namespace aatbe::parser {
   }
 
 #define ErrorOrContinue(Name, Expr) \
-  auto Name = (Expr);               \
-  if (!Name)                        \
-    return Name.Error();
+  auto(Name) = (Expr);               \
+  if (!(Name))                        \
+    return (Name).Error();
+
+#define Deffer(expr) [](Parser &parser) { return (expr); }
 
 template <typename T>
 concept AstNode = requires(T t) {
@@ -96,7 +98,8 @@ public:
   // const SuccessType &Value() const { return std::get<SuccessType>(value); }
   const ErrorType &Error() const { return std::get<ErrorType>(value); }
 
-  template <typename T, typename ... Args> ParseResult<T *> WrapWith(Args ...args) {
+  template <typename T, typename... Args>
+  ParseResult<T *> WrapWith(Args... args) {
     if (*this)
       return ParserSuccess(new T(this->Node(), args...));
     else
@@ -140,6 +143,12 @@ public:
 
     return false;
   }
+  auto Peek(const char *valueS) {
+    if (auto token = this->Peek())
+      return token->get()->ValueS() == valueS;
+
+    return false;
+  }
 
   auto Read() {
     return index < this->tokens.size()
@@ -149,6 +158,9 @@ public:
   }
   auto Read(TokenKind kind, const char *valueS) {
     return this->Peek(kind, valueS) ? this->Read() : std::nullopt;
+  }
+  auto Read(const char *valueS) {
+    return this->Peek(valueS) ? this->Read() : std::nullopt;
   }
 
   ParseResult<ModuleStatementNode *> ParseModuleStatement();
@@ -166,6 +178,41 @@ public:
       Restore(memo);
 
     return result;
+  }
+
+  template <typename F>
+  auto DelimitedBy(F f, TokenKind kind, const char *delimiter) {
+    std::vector<decltype(f(*this))> results;
+
+    while (true) {
+      auto result = f(*this);
+
+      if (!result)
+        break;
+
+      results.push_back(result);
+
+      if (!Read(kind, delimiter))
+        break;
+    }
+
+    return results;
+  }
+
+  template <typename F>
+  auto SurroundedBy(F parser, TokenKind kind, const char *open, TokenKind kind2,
+                    const char *close) {
+    if (!Read(kind, open))
+      return ParseResult<decltype(parser(*this))>(
+          ParserError(ParseErrorKind::ExpectedToken, ""));
+
+    auto result = parser(*this);
+
+    if (!Read(kind2, close))
+      return ParseResult<decltype(parser(*this))>(
+          ParserError(ParseErrorKind::ExpectedToken, ""));
+
+    return ParseResult(ParserSuccess(result));
   }
 
 private:
