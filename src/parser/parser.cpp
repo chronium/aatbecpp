@@ -33,9 +33,9 @@ auto Parser::ReadKeyword(const char *keyword) {
   return this->PeekKeyword(keyword) ? this->Read() : std::nullopt;
 }
 
-ParseResult<ModuleStatement *> Parser::ParseModuleStatement() {
+ParseResult<ModuleStatementNode *> Parser::ParseModuleStatement() {
   if (ReadKeyword("fn"))
-    return ParserSuccess(new ModuleStatement(new FunctionStatement("")));
+    return ParserSuccess(new ModuleStatementNode(new FunctionStatement("")));
 
   return ParserError(ParseErrorKind::UnexpectedToken, "");
 }

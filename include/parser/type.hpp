@@ -138,49 +138,49 @@ private:
 };
 
 struct SliceType : public Type {
-  explicit SliceType(const TypeNode &type)
-      : type(std::make_shared<TypeNode>(type)) {}
+  explicit SliceType(const TypeNode *type)
+      : type(type) {}
 
   TypeKind Kind() const override { return TypeKind::Slice; }
   auto Inner() const { return this->type; }
 
 private:
-  std::shared_ptr<TypeNode> type;
+  const TypeNode *type;
 };
 
 struct ArrayType : public Type {
-  ArrayType(const TypeNode &type, uint64_t size)
-      : type(std::make_shared<TypeNode>(type)), size(size) {}
+  ArrayType(const TypeNode *type, uint64_t size)
+      : type(type), size(size) {}
 
   TypeKind Kind() const override { return TypeKind::Array; }
   auto Inner() const { return this->type; }
   auto Size() const { return this->size; }
 
 private:
-  std::shared_ptr<TypeNode> type;
+  const TypeNode *type;
   uint64_t size;
 };
 
 struct RefType : public Type {
-  explicit RefType(const TypeNode &type)
-      : type(std::make_shared<TypeNode>(type)) {}
+  explicit RefType(const TypeNode *type)
+      : type(type) {}
 
   TypeKind Kind() const override { return TypeKind::Ref; }
   auto Inner() const { return this->type; }
 
 private:
-  std::shared_ptr<TypeNode> type;
+  const TypeNode *type;
 };
 
 struct PointerType : public Type {
-  explicit PointerType(const TypeNode &type)
-      : type(std::make_shared<TypeNode>(type)) {}
+  explicit PointerType(const TypeNode *type)
+      : type(type) {}
 
   TypeKind Kind() const override { return TypeKind::Pointer; }
   auto Inner() const { return this->type; }
 
 private:
-  std::shared_ptr<TypeNode> type;
+  const TypeNode *type;
 };
 
 ParseResult<TypeNode *> ParseType(Parser &parser);

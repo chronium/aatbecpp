@@ -17,34 +17,35 @@ enum class ModuleStatementKind {
   Type,
 };
 
-struct ModuleStatementNode {
-  ModuleStatementNode() = delete;
+struct ModuleStatement {
+  ModuleStatement() = default;
+  ModuleStatement(ModuleStatement &&) = delete;
+  ModuleStatement(ModuleStatement const &) = delete;
+  ModuleStatement &operator=(ModuleStatement const &) = delete;
 
-  explicit ModuleStatementNode(ModuleStatementKind kind) : kind(kind) {}
+  virtual ~ModuleStatement() = default;
 
-  auto Kind() const { return this->kind; }
-
-private:
-  ModuleStatementKind kind;
+  virtual ModuleStatementKind Kind() const = 0;
 };
 
-struct FunctionStatement : ModuleStatementNode {
+struct FunctionStatement : ModuleStatement {
   FunctionStatement() = delete;
 
-  explicit FunctionStatement(std::string name)
-      : ModuleStatementNode(ModuleStatementKind::Function),
-        name(std::move(name)) {}
+  explicit FunctionStatement(std::string name) : name(std::move(name)) {}
 
   auto Name() const { return this->name; }
+  ModuleStatementKind Kind() const override {
+    return ModuleStatementKind::Function;
+  }
 
 private:
   std::string name;
 };
 
-struct ModuleStatement {
-  ModuleStatement() = delete;
+struct ModuleStatementNode {
+  ModuleStatementNode() = delete;
 
-  template <typename T> explicit ModuleStatement(T value) : value(value) {}
+  template <typename T> explicit ModuleStatementNode(T value) : value(value) {}
 
   auto Value() { return value; }
   auto Kind() { return value->Kind(); }
@@ -52,18 +53,18 @@ struct ModuleStatement {
   auto AsFunction() { return (FunctionStatement *)value; }
 
 private:
-  ModuleStatementNode *value;
+  ModuleStatement *value;
 };
 
 struct ModuleNode {
 public:
-  explicit ModuleNode(std::vector<std::unique_ptr<ModuleStatement>> statements)
+  explicit ModuleNode(std::vector<std::unique_ptr<ModuleStatementNode>> statements)
       : statements(std::move(statements)) {}
 
 private:
   std::string name;
 
-  std::vector<std::unique_ptr<ModuleStatement>> statements;
+  std::vector<std::unique_ptr<ModuleStatementNode>> statements;
 };
 
 } // namespace aatbe::parser

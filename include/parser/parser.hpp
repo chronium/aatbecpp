@@ -18,6 +18,23 @@ namespace aatbe::parser {
 #define Unwrap(NODE, Type) NODE.Node()->As##Type()->Value()
 #define Dig(NODE, Type, What) NODE.Node()->As##Type()->What()
 
+#define TryReturn(Expr) \
+  if (auto Result = (Expr)) { \
+    return Result; \
+  }
+
+#define TryReturnOrError(Expr) \
+  if (auto Result = (Expr)) { \
+    return Result; \
+  } else { \
+    return Result.Error(); \
+  }
+
+#define ErrorOrContinue(Name, Expr) \
+  auto Name = (Expr);               \
+  if (!Name)                        \
+    return Name.Error();
+
 template <typename T>
 concept AstNode = requires(T t) {
                     t->Value();
@@ -76,8 +93,15 @@ public:
   auto Kind() { return std::get<SuccessType>(value).Value()->Kind(); }
   auto Value() { return std::get<SuccessType>(value).Value()->Value(); }
   ErrorType &Error() { return std::get<ErrorType>(value); }
-  //const SuccessType &Value() const { return std::get<SuccessType>(value); }
+  // const SuccessType &Value() const { return std::get<SuccessType>(value); }
   const ErrorType &Error() const { return std::get<ErrorType>(value); }
+
+  template <typename T, typename ... Args> ParseResult<T *> WrapWith(Args ...args) {
+    if (*this)
+      return ParserSuccess(new T(this->Node(), args...));
+    else
+      return this->Error();
+  }
 };
 
 class Parser {
@@ -127,7 +151,7 @@ public:
     return this->Peek(kind, valueS) ? this->Read() : std::nullopt;
   }
 
-  ParseResult<ModuleStatement *> ParseModuleStatement();
+  ParseResult<ModuleStatementNode *> ParseModuleStatement();
 
   std::unique_ptr<ModuleNode *> Parse();
 

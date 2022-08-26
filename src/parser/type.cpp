@@ -6,7 +6,6 @@
 #include <parser/terminal.hpp>
 #include <parser/type.hpp>
 
-#include <vector>
 #include <variant>
 
 namespace aatbe::parser {
@@ -71,33 +70,24 @@ ParseResult<SliceType *> ParseSlice(Parser &parser) {
   if (!parser.Read(TokenKind::Symbol, "["))
     return ParserError(ParseErrorKind::ExpectedToken, "");
 
-  auto type = ParseType(parser);
-
-  if (!type)
-    return type.Error();
+  ErrorOrContinue(type, ParseType(parser));
 
   if (!parser.Read(TokenKind::Symbol, "]"))
     return ParserError(ParseErrorKind::ExpectedToken, "");
 
-  return ParserSuccess(new SliceType(*type.Node()));
+  return type.WrapWith<SliceType>();
 }
 
 ParseResult<ArrayType *> ParseArray(Parser &parser) {
   if (!parser.Read(TokenKind::Symbol, "["))
     return ParserError(ParseErrorKind::ExpectedToken, "");
 
-  auto type = ParseType(parser);
-
-  if (!type)
-    return type.Error();
+  ErrorOrContinue(type, ParseType(parser));
 
   if (!parser.Read(TokenKind::Symbol, ";"))
     return ParserError(ParseErrorKind::ExpectedToken, "");
 
-  auto size = ParseTerminal(parser);
-
-  if (!size)
-    return size.Error();
+  ErrorOrContinue(size, ParseTerminal(parser));
 
   if (size.Kind() != TerminalKind::Integer)
     return ParserError(ParseErrorKind::ExpectedToken, "");
@@ -105,73 +95,34 @@ ParseResult<ArrayType *> ParseArray(Parser &parser) {
   if (!parser.Read(TokenKind::Symbol, "]"))
     return ParserError(ParseErrorKind::ExpectedToken, "");
 
-  return ParserSuccess(new ArrayType(*type.Node(), Unwrap(size, Integer)));
+  return type.WrapWith<ArrayType>(Unwrap(size, Integer));
 }
 
 ParseResult<RefType *> ParseRef(Parser &parser) {
   if (!parser.Read(TokenKind::Keyword, "ref"))
     return ParserError(ParseErrorKind::ExpectedToken, "");
 
-  auto type = ParseType(parser);
-
-  if (!type)
-    return type.Error();
-
-  return ParserSuccess(new RefType(*type.Node()));
+  TryReturnOrError(ParseType(parser).WrapWith<RefType>());
 }
 
 ParseResult<PointerType *> ParsePointer(Parser &parser) {
   if (!parser.Read(TokenKind::Symbol, "*"))
     return ParserError(ParseErrorKind::ExpectedToken, "");
 
-  auto type = ParseType(parser);
-
-  if (!type)
-    return type.Error();
-
-  return ParserSuccess(new PointerType(*type.Node()));
+  TryReturnOrError(ParseType(parser).WrapWith<PointerType>());
 }
 
 ParseResult<TypeNode *> ParseType(Parser &parser) {
-  auto sInt = parser.Try(ParseSInt);
-  if (sInt)
-    return ParserSuccess(new TypeNode(sInt.Node()));
-
-  auto uInt = parser.Try(ParseUInt);
-  if (uInt)
-    return ParserSuccess(new TypeNode(uInt.Node()));
-
-  auto floatType = parser.Try(ParseFloat);
-  if (floatType)
-    return ParserSuccess(new TypeNode(floatType.Node()));
-
-  auto boolType = parser.Try(ParseBool);
-  if (boolType)
-    return ParserSuccess(new TypeNode(boolType.Node()));
-
-  auto charType = parser.Try(ParseChar);
-  if (charType)
-    return ParserSuccess(new TypeNode(charType.Node()));
-
-  auto strType = parser.Try(ParseString);
-  if (strType)
-    return ParserSuccess(new TypeNode(strType.Node()));
-
-  auto sliceType = parser.Try(ParseSlice);
-  if (sliceType)
-    return ParserSuccess(new TypeNode(sliceType.Node()));
-
-  auto arrayType = parser.Try(ParseArray);
-  if (arrayType)
-    return ParserSuccess(new TypeNode(arrayType.Node()));
-
-  auto refType = parser.Try(ParseRef);
-  if (refType)
-    return ParserSuccess(new TypeNode(refType.Node()));
-
-  auto pointerType = parser.Try(ParsePointer);
-  if (pointerType)
-    return ParserSuccess(new TypeNode(pointerType.Node()));
+  TryReturn(parser.Try(ParseSInt).WrapWith<TypeNode>());
+  TryReturn(parser.Try(ParseUInt).WrapWith<TypeNode>());
+  TryReturn(parser.Try(ParseFloat).WrapWith<TypeNode>());
+  TryReturn(parser.Try(ParseBool).WrapWith<TypeNode>());
+  TryReturn(parser.Try(ParseChar).WrapWith<TypeNode>());
+  TryReturn(parser.Try(ParseString).WrapWith<TypeNode>());
+  TryReturn(parser.Try(ParseSlice).WrapWith<TypeNode>());
+  TryReturn(parser.Try(ParseArray).WrapWith<TypeNode>());
+  TryReturn(parser.Try(ParseRef).WrapWith<TypeNode>());
+  TryReturn(parser.Try(ParsePointer).WrapWith<TypeNode>());
 
   return ParserError(ParseErrorKind::ExpectedType, "");
 }

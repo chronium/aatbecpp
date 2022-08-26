@@ -30,14 +30,14 @@ struct Expression {
 };
 
 struct AtomExpression : public Expression {
-  explicit AtomExpression(const TerminalNode &terminal)
-      : terminal(std::make_shared<TerminalNode>(terminal)) {}
+  explicit AtomExpression(const TerminalNode *terminal)
+      : terminal(terminal) {}
 
   auto Value() const { return this->terminal; }
   ExpressionKind Kind() const { return ExpressionKind::Atom; }
 
 private:
-  std::shared_ptr<TerminalNode> terminal;
+  const TerminalNode *terminal;
 };
 
 struct UnaryExpression;
@@ -79,8 +79,8 @@ struct UnaryExpression : public Expression {
   };
 
   UnaryExpression() = delete;
-  UnaryExpression(UnaryKind opKind, ExpressionNode expr)
-      : opKind(opKind), expr(std::make_shared<ExpressionNode>(expr)) {}
+  UnaryExpression(const ExpressionNode *expr, UnaryKind opKind)
+      : opKind(opKind), expr(expr) {}
 
   UnaryKind OpKind() const { return this->opKind; }
 
@@ -89,7 +89,7 @@ struct UnaryExpression : public Expression {
 
 private:
   UnaryKind opKind;
-  std::shared_ptr<ExpressionNode> expr;
+  const ExpressionNode *expr;
 };
 
 struct BinaryExpression : public Expression {
@@ -152,6 +152,7 @@ struct CallExpression : public Expression {
 
   auto Callee() const { return this->callee; }
   auto Args() const { return this->args; }
+  auto Value() const { return std::make_tuple(this->callee, this->args); }
   ExpressionKind Kind() const { return ExpressionKind::Call; }
 
 private:

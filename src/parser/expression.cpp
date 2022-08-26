@@ -10,12 +10,7 @@
 namespace aatbe::parser {
 
 ParseResult<AtomExpression *> ParseAtom(Parser &parser) {
-  auto token = ParseTerminal(parser);
-  if (!token) {
-    return ParserError(ParseErrorKind::ExpectedTerminal, "");
-  }
-
-  return ParserSuccess(new AtomExpression(*token.Node()));
+  TryReturnOrError(ParseTerminal(parser).WrapWith<AtomExpression>());
 }
 
 ParseResult<UnaryExpression *> ParseUnary(Parser &parser) {
@@ -27,43 +22,22 @@ ParseResult<UnaryExpression *> ParseUnary(Parser &parser) {
     return ParserError(ParseErrorKind::ExpectedSymbol, "");
 
   auto op = token->get()->ValueS();
+  ErrorOrContinue(expr, ParseExpression(parser));
 
-  if (op == "!") {
-    auto expr = ParseExpression(parser);
-    if (!expr)
-      return ParserError(ParseErrorKind::ExpectedExpression, "");
-
-    return ParserSuccess(new UnaryExpression(
-        UnaryExpression::UnaryKind::LogicalNot, *expr.Node()));
-  } else if (op == "-") {
-    auto expr = ParseExpression(parser);
-    if (!expr)
-      return ParserError(ParseErrorKind::ExpectedExpression, "");
-
-    return ParserSuccess(new UnaryExpression(
-        UnaryExpression::UnaryKind::Negation, *expr.Node()));
-  } else if (op == "~") {
-    auto expr = ParseExpression(parser);
-    if (!expr)
-      return ParserError(ParseErrorKind::ExpectedExpression, "");
-
-    return ParserSuccess(new UnaryExpression(
-        UnaryExpression::UnaryKind::BitwiseNot, *expr.Node()));
-  } else if (op == "&") {
-    auto expr = ParseExpression(parser);
-    if (!expr)
-      return ParserError(ParseErrorKind::ExpectedExpression, "");
-
-    return ParserSuccess(new UnaryExpression(
-        UnaryExpression::UnaryKind::AddressOf, *expr.Node()));
-  } else if (op == "*") {
-    auto expr = ParseExpression(parser);
-    if (!expr)
-      return ParserError(ParseErrorKind::ExpectedExpression, "");
-
-    return ParserSuccess(new UnaryExpression(
-        UnaryExpression::UnaryKind::Dereference, *expr.Node()));
-  }
+  if (op == "!")
+    return expr.WrapWith<UnaryExpression>(
+        UnaryExpression::UnaryKind::LogicalNot);
+  else if (op == "-")
+    return expr.WrapWith<UnaryExpression>(UnaryExpression::UnaryKind::Negation);
+  else if (op == "~")
+    return expr.WrapWith<UnaryExpression>(
+        UnaryExpression::UnaryKind::BitwiseNot);
+  else if (op == "&")
+    return expr.WrapWith<UnaryExpression>(
+        UnaryExpression::UnaryKind::AddressOf);
+  else if (op == "*")
+    return expr.WrapWith<UnaryExpression>(
+        UnaryExpression::UnaryKind::Dereference);
 
   return ParserError(ParseErrorKind::InvalidOperator, "");
 }
@@ -71,6 +45,7 @@ ParseResult<UnaryExpression *> ParseUnary(Parser &parser) {
 ParseResult<TupleExpression *> ParseTuple(Parser &parser) {
   if (!parser.Read(TokenKind::Symbol, "("))
     return ParserError(ParseErrorKind::ExpectedToken, "");
+
   std::vector<ExpressionNode *> exprs;
   while (true) {
     auto expr = ParseExpression(parser);
@@ -82,29 +57,22 @@ ParseResult<TupleExpression *> ParseTuple(Parser &parser) {
   }
   if (!parser.Read(TokenKind::Symbol, ")"))
     return ParserError(ParseErrorKind::ExpectedToken, "");
+
   return ParserSuccess(new TupleExpression(exprs));
 }
 
 ParseResult<ExpressionNode *> ParseExpression(Parser &parser) {
-  auto unary = parser.Try(ParseUnary);
-  if (unary)
-    return ParserSuccess(new ExpressionNode(unary.Node()));
+  TryReturn(parser.Try(ParseUnary).WrapWith<ExpressionNode>());
+  TryReturn(parser.Try(ParseTuple).WrapWith<ExpressionNode>());
 
-  auto tuple = parser.Try(ParseTuple);
-  if (tuple)
-    return ParserSuccess(new ExpressionNode(tuple.Node()));
+  ErrorOrContinue(atom, ParseAtom(parser).WrapWith<ExpressionNode>());
 
-  auto atom = ParseAtom(parser);
-  if (!atom)
-    return atom.Error();
-
-  auto tupleArgs = parser.Try(ParseTuple);
+  auto tupleArgs = parser.Try(ParseTuple).WrapWith<ExpressionNode>();
   if (tupleArgs)
-    return ParserSuccess(new ExpressionNode(
-        new CallExpression(new ExpressionNode(atom.Node()),
-                           new ExpressionNode(tupleArgs.Node()))));
+    return atom.WrapWith<CallExpression>(tupleArgs.Node())
+        .WrapWith<ExpressionNode>();
 
-  return ParserSuccess(new ExpressionNode(atom.Node()));
+  return atom;
 }
 
 } // namespace aatbe::parser
