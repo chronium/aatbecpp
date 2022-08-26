@@ -133,7 +133,7 @@ TEST(Lexer, Symbol) {
                "& | ^ ~ "
                ">> >> "
                "{ } [ ] ( ) "
-               ", ; @ "
+               ", ; @ : "
                "+= -= *= /= %= ";
   auto lexer = makeLexer(makeFile(input));
 
@@ -151,8 +151,9 @@ TEST(Lexer, Symbol) {
 
 TEST(Lexer, Keyword) {
   auto input = "if else while for break continue return then "
-               "fn in var val from use module export ptr "
-               "const global type struct enum as ref";
+               "fn in var val from use module export "
+               "const global type struct enum as "
+               "extern ref ptr";
   auto lexer = makeLexer(makeFile(input));
 
   std::stringstream stream(input);

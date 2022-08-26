@@ -236,6 +236,4 @@ private:
   ExpressionNode *args;
 };
 
-ParseResult<ExpressionNode *> ParseExpression(Parser &tokens);
-
 } // namespace aatbe::parser

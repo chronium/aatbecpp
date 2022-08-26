@@ -167,7 +167,7 @@ public:
     return this->Peek(valueS) ? this->Read() : std::nullopt;
   }
 
-  //std::unique_ptr<ModuleNode *> Parse();
+  // std::unique_ptr<ModuleNode *> Parse();
 
   Memo Snapshot() const { return Memo{index}; }
   void Restore(Memo memo) { index = memo.Index(); }
@@ -222,7 +222,11 @@ private:
   size_t index = 0;
 };
 
+ParseResult<FunctionStatement *> ParseFunction(Parser &parser);
 ParseResult<ModuleStatementNode *> ParseModuleStatement(Parser &parser);
 ParseResult<TypeNode *> ParseType(Parser &parser);
+ParseResult<TerminalNode *> ParseTerminal(Parser &parser);
+ParseResult<ExpressionNode *> ParseExpression(Parser &tokens);
+ParseResult<ParameterBinding *> ParseParameter(Parser &parser);
 
 } // namespace aatbe::parser

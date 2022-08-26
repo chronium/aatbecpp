@@ -113,3 +113,13 @@ TEST(TerminalParser, Identifier) {
   EXPECT_EQ(c.Kind(), TerminalKind::Identifier);
   EXPECT_STREQ(Unwrap(c, Identifier).c_str(), "_hello");
 }
+
+TEST(TerminalParser, Unit) {
+  auto tokens = makeTokens("()");
+  Parser parser(tokens);
+
+  auto a = ParseTerminal(parser);
+
+  EXPECT_TRUE(a);
+  EXPECT_EQ(a.Kind(), TerminalKind::UnitVal);
+}

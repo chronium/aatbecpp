@@ -3,9 +3,11 @@
 #include <string>
 #include <utility>
 #include <vector>
+#include <optional>
 
 #include <parser/type.hpp>
 #include <parser/parameters.hpp>
+#include <parser/expression.hpp>
 
 namespace aatbe::parser {
 
@@ -24,14 +26,16 @@ struct ModuleStatement {
 struct FunctionStatement : ModuleStatement {
   FunctionStatement() = delete;
 
-  FunctionStatement(std::string name,
-                    ParameterList *parameters,
-                    TypeNode *returnType)
-      : name(std::move(name)), parameters(parameters), returnType(returnType) {}
+  FunctionStatement(bool isExtern, std::string name, ParameterList *parameters,
+                    TypeNode *returnType, std::optional<ExpressionNode *> body)
+      : isExtern(isExtern), name(std::move(name)), parameters(parameters),
+        returnType(returnType), body(body) {}
 
   auto Name() const { return this->name; }
   auto Parameters() const { return this->parameters; }
   auto ReturnType() const { return this->returnType; }
+  auto Body() const { return this->body; }
+  auto IsExtern() const { return this->isExtern; }
 
   auto Value() const { return std::make_tuple(name, parameters, returnType); }
 
@@ -40,13 +44,22 @@ struct FunctionStatement : ModuleStatement {
   }
 
   std::string Format() const override {
-    return "Function(" + name + ", args " + parameters->Format() + ", ret " + returnType->Format() + ")";
+    auto res = "Function(" + name + ", args " + parameters->Format() +
+               ", ret " + returnType->Format() + ")";
+
+    if (body.has_value()) {
+      res += " = " + body.value()->Format();
+    }
+
+    return res;
   }
 
 private:
+  bool isExtern;
   std::string name;
   ParameterList *parameters;
   TypeNode *returnType;
+  std::optional<ExpressionNode *> body;
 };
 
 struct ModuleStatementNode {
@@ -68,7 +81,8 @@ private:
 
 struct ModuleNode {
 public:
-  explicit ModuleNode(std::vector<std::unique_ptr<ModuleStatementNode>> statements)
+  explicit ModuleNode(
+      std::vector<std::unique_ptr<ModuleStatementNode>> statements)
       : statements(std::move(statements)) {}
 
 private:

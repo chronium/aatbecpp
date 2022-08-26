@@ -6,15 +6,13 @@
 
 #include <lexer/token.hpp>
 
-#include <parser/ast.hpp>
-#include <parser/parser.hpp>
 #include <vector>
 
 using namespace aatbe::lexer;
 
 namespace aatbe::parser {
 
-enum TerminalKind : int { Boolean, Integer, Character, String, Identifier };
+enum TerminalKind : int { Boolean, Integer, Character, String, Identifier, UnitVal };
 
 struct Terminal {
   Terminal() = default;
@@ -99,6 +97,15 @@ private:
   std::string value;
 };
 
+struct UnitTerm : public Terminal {
+  explicit UnitTerm() {}
+
+  TerminalKind Kind() const override { return TerminalKind::UnitVal; }
+
+  std::string Format() const override { return "()"; }
+};
+
+
 struct TerminalNode {
   TerminalNode() = delete;
 
@@ -123,7 +130,5 @@ struct TerminalNode {
 private:
   Terminal *value;
 };
-
-ParseResult<TerminalNode *> ParseTerminal(Parser &parser);
 
 } // namespace aatbe::parser

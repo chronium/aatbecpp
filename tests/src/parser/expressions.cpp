@@ -8,9 +8,6 @@
 #include <parser/expression.hpp>
 #include <parser/parser.hpp>
 
-#include <lexer/lexer.hpp>
-#include <lexer/token.hpp>
-
 using namespace aatbe::parser;
 
 TEST(ExpressionParser, ParseTuple) {

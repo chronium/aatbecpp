@@ -24,6 +24,7 @@ tests = [
   'tests/src/parser/terminals.cpp',
   'tests/src/parser/types.cpp',
   'tests/src/parser/expressions.cpp',
+  'tests/src/parser/functions.cpp'
 ]
 
 libcomp = shared_library(

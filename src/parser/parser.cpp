@@ -7,8 +7,6 @@
 #include <lexer/lexer.hpp>
 #include <parser/ast.hpp>
 #include <parser/parser.hpp>
-#include <parser/terminal.hpp>
-#include <parser/type.hpp>
 
 using namespace aatbe::lexer;
 using namespace aatbe::parser;
@@ -56,21 +54,25 @@ ParseResult<IdentifierTerm *> ParseIdentifier(Parser &parser) {
 }
 
 ParseResult<FunctionStatement *> ParseFunction(Parser &parser) {
+  auto isExtern = parser.ReadKeyword("extern").has_value();
+
   if (!parser.Read(TokenKind::Keyword, "fn"))
     return ParserError(ParseErrorKind::ExpectedToken, "");
 
   ErrorOrContinue(name, ParseIdentifier(parser));
 
-  auto argList = Deffer(new ParameterList(parser.DelimitedBy(Deffer(ParseParameter(parser).Node()),
-                                 TokenKind::Symbol, ",")));
+  auto argList = Deffer(new ParameterList(parser.DelimitedBy(
+      Deffer(ParseParameter(parser).Node()), TokenKind::Symbol, ",")));
 
-  ParseResult<ParameterList *> args = ParserSuccess(new ParameterList(std::vector<ParameterBinding *> {}));
+  ParseResult<ParameterList *> args =
+      ParserSuccess(new ParameterList(std::vector<ParameterBinding *>{}));
   if (parser.Peek("(", 0) && parser.Peek(")", 1)) {
     parser.Read();
     parser.Read();
-  }
-  else if (!parser.Peek(TokenKind::Symbol, "->") && !parser.Peek(TokenKind::Symbol, "="))
-    args = parser.SurroundedBy(argList, TokenKind::Symbol, "(", TokenKind::Symbol, ")");
+  } else if (!parser.Peek(TokenKind::Symbol, "->") &&
+             !parser.Peek(TokenKind::Symbol, "=") && parser.Peek())
+    args = parser.SurroundedBy(argList, TokenKind::Symbol, "(",
+                               TokenKind::Symbol, ")");
 
   auto returnType = new TypeNode(new UnitType());
 
@@ -81,10 +83,10 @@ ParseResult<FunctionStatement *> ParseFunction(Parser &parser) {
       return ParserError(ParseErrorKind::ExpectedType, "");
   }
 
-  if (!parser.Read(TokenKind::Symbol, "="))
-    return ParserError(ParseErrorKind::ExpectedToken, "");
+  auto body = parser.Read(TokenKind::Symbol, "=") ? std::optional(ParseExpression(parser).Node()) : std::nullopt;
 
-  return ParserSuccess(new FunctionStatement(name.Node()->Value(), args.Node(), returnType));
+  return ParserSuccess(new FunctionStatement(
+      isExtern, name.Node()->Value(), args.Node(), returnType, body));
 }
 
 ParseResult<ModuleStatementNode *> ParseModuleStatement(Parser &parser) {
@@ -112,6 +114,11 @@ ParseResult<TerminalNode *> ParseTerminal(Parser &parser) {
       return ParserSuccess(
           new TerminalNode(new IdentifierTerm(parser.Read()->get()->ValueS())));
     default:
+      if (parser.Peek("(", 0) && parser.Peek(")", 1)) {
+        parser.Read();
+        parser.Read();
+        return ParserSuccess(new TerminalNode(new UnitTerm()));
+      }
       return ParserError(ParseErrorKind::InvalidToken, "");
     }
   }

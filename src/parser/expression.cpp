@@ -4,6 +4,7 @@
 
 #include <parser/terminal.hpp>
 #include <parser/expression.hpp>
+#include <parser/parser.hpp>
 
 #include <vector>
 
@@ -50,8 +51,21 @@ ParseResult<TupleExpression *> ParseTuple(Parser &parser) {
                              ")");
 }
 
+ParseResult<AtomExpression *> ParseUnitAtom(Parser &parser) {
+  if (parser.Read(TokenKind::Symbol, "(")) {
+    if (parser.Read(TokenKind::Symbol, ")"))
+      return ParserSuccess(
+          new AtomExpression(new TerminalNode(new UnitTerm())));
+    else
+      return ParserError(ParseErrorKind::ExpectedToken, "");
+  }
+
+  return ParserError(ParseErrorKind::ExpectedToken, "");
+}
+
 ParseResult<ExpressionNode *> ParseExpression(Parser &parser) {
   TryReturn(parser.Try(ParseUnary).WrapWith<ExpressionNode>());
+  TryReturn(parser.Try(ParseUnitAtom).WrapWith<ExpressionNode>());
   TryReturn(parser.Try(ParseTuple).WrapWith<ExpressionNode>());
 
   ErrorOrContinue(atom, ParseAtom(parser).WrapWith<ExpressionNode>());
