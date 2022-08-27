@@ -17,6 +17,7 @@ enum class ModuleStatementKind {
   Type,
   ParameterBinding,
   ParameterList,
+  Module,
 };
 
 } // namespace aatbe::parser

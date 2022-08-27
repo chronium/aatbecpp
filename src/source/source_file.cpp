@@ -19,7 +19,7 @@ std::unique_ptr<SrcFile> SrcFile::FromString(const char *content) {
   return std::make_unique<SrcFile>(new std::string(content));
 }
 
-std::unique_ptr<SrcFile> SrcFile::FromFile(std::string &path) {
+std::unique_ptr<SrcFile> SrcFile::FromFile(const std::string &path) {
   std::ifstream input(path);
 
   if (!input.is_open()) {

@@ -13,7 +13,7 @@ libgtest = static_library(
 )
 
 test_dep = declare_dependency(
-    dependencies: dependency('threads'),
+    dependencies: [dependency('threads'), llvm_dep],
     include_directories: gtest_incdir,
-    link_with: libgtest
+    link_with: libgtest,
 )

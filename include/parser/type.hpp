@@ -8,6 +8,11 @@
 #include <vector>
 #include <cassert>
 
+#include <llvm/IR/Type.h>
+#include <codegen.hpp>
+
+using namespace aatbe::codegen;
+
 namespace aatbe::parser {
 
 enum TypeKind {
@@ -44,6 +49,8 @@ struct Type {
   virtual TypeKind Kind() const = 0;
   virtual TypeKind Value() const { return Kind(); }
   virtual std::string Format() const = 0;
+
+  virtual llvm::Type *LLVMType() = 0;
 };
 
 struct SIntType : public Type {
@@ -66,6 +73,21 @@ struct SIntType : public Type {
       return "int64";
     default:
       return "int8";
+    }
+  }
+
+  llvm::Type *LLVMType() override {
+    switch (kind) {
+    case TypeKind::Int8:
+      return llvm::Type::getInt8Ty(*GetLLVMContext());
+    case TypeKind::Int16:
+      return llvm::Type::getInt16Ty(*GetLLVMContext());
+    case TypeKind::Int32:
+      return llvm::Type::getInt32Ty(*GetLLVMContext());
+    case TypeKind::Int64:
+      return llvm::Type::getInt64Ty(*GetLLVMContext());
+    default:
+      return llvm::Type::getInt64Ty(*GetLLVMContext());
     }
   }
 
@@ -96,6 +118,21 @@ struct UIntType : public Type {
     }
   }
 
+  llvm::Type *LLVMType() override {
+    switch (kind) {
+    case TypeKind::UInt8:
+      return llvm::Type::getInt8Ty(*GetLLVMContext());
+    case TypeKind::UInt16:
+      return llvm::Type::getInt16Ty(*GetLLVMContext());
+    case TypeKind::UInt32:
+      return llvm::Type::getInt32Ty(*GetLLVMContext());
+    case TypeKind::UInt64:
+      return llvm::Type::getInt64Ty(*GetLLVMContext());
+    default:
+      return llvm::Type::getInt64Ty(*GetLLVMContext());
+    }
+  }
+
 private:
   TypeKind kind;
 };
@@ -118,6 +155,17 @@ struct FloatType : public Type {
     }
   }
 
+  llvm::Type *LLVMType() override {
+    switch (kind) {
+    case TypeKind::Float32:
+      return llvm::Type::getFloatTy(*GetLLVMContext());
+    case TypeKind::Float64:
+      return llvm::Type::getDoubleTy(*GetLLVMContext());
+    default:
+      return llvm::Type::getFloatTy(*GetLLVMContext());
+    }
+  }
+
 private:
   TypeKind kind;
 };
@@ -128,6 +176,10 @@ struct BoolType : public Type {
   TypeKind Kind() const override { return TypeKind::Bool; }
 
   std::string Format() const override { return "bool"; }
+
+  llvm::Type *LLVMType() override {
+    return llvm::Type::getInt1Ty(*GetLLVMContext());
+  }
 };
 
 struct CharType : public Type {
@@ -136,6 +188,10 @@ struct CharType : public Type {
   TypeKind Kind() const override { return TypeKind::Char; }
 
   std::string Format() const override { return "char"; }
+
+  llvm::Type *LLVMType() override {
+    return llvm::Type::getInt8Ty(*GetLLVMContext());
+  }
 };
 
 struct StrType : public Type {
@@ -144,6 +200,10 @@ struct StrType : public Type {
   TypeKind Kind() const override { return TypeKind::Str; }
 
   std::string Format() const override { return "str"; }
+
+  llvm::Type *LLVMType() override {
+    return llvm::Type::getInt8PtrTy(*GetLLVMContext());
+  }
 };
 
 struct UnitType : public Type {
@@ -152,6 +212,10 @@ struct UnitType : public Type {
   TypeKind Kind() const override { return TypeKind::Unit; }
 
   std::string Format() const override { return "()"; }
+
+  llvm::Type *LLVMType() override {
+    return llvm::Type::getVoidTy(*GetLLVMContext());
+  }
 };
 
 struct SliceType;
@@ -168,6 +232,8 @@ public:
   TypeKind Kind() const { return value->Kind(); }
   auto Value() const { return value; }
   auto Format() const { return "Type(" + value->Format() + ")"; }
+
+  llvm::Type *LLVMType() { return value->LLVMType(); }
 
   auto AsSInt() const { return (SIntType *)value; }
 
@@ -205,6 +271,10 @@ struct SliceType : public Type {
     return "[" + this->type->Format() + "]";
   }
 
+  llvm::Type *LLVMType() override {
+    return llvm::Type::getVoidTy(*GetLLVMContext());
+  }
+
 private:
   const TypeNode *type;
 };
@@ -220,6 +290,10 @@ struct ArrayType : public Type {
     return "[" + this->type->Format() + "; " + std::to_string(this->size) + "]";
   }
 
+  llvm::Type *LLVMType() override {
+    return llvm::Type::getVoidTy(*GetLLVMContext());
+  }
+
 private:
   const TypeNode *type;
   uint64_t size;
@@ -233,6 +307,10 @@ struct RefType : public Type {
 
   std::string Format() const override { return "ref " + this->type->Format(); }
 
+  llvm::Type *LLVMType() override {
+    return llvm::Type::getVoidTy(*GetLLVMContext());
+  }
+
 private:
   const TypeNode *type;
 };
@@ -244,6 +322,10 @@ struct PointerType : public Type {
   auto Inner() const { return this->type; }
 
   std::string Format() const override { return "ptr " + this->type->Format(); }
+
+  llvm::Type *LLVMType() override {
+    return llvm::Type::getVoidTy(*GetLLVMContext());
+  }
 
 private:
   const TypeNode *type;

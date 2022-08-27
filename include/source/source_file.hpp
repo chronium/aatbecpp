@@ -15,7 +15,7 @@ public:
 
   static std::unique_ptr<SrcFile> FromString(std::string &content);
   static std::unique_ptr<SrcFile> FromString(const char *content);
-  static std::unique_ptr<SrcFile> FromFile(std::string &path);
+  static std::unique_ptr<SrcFile> FromFile(const std::string &path);
 
   char Char(size_t at);
 

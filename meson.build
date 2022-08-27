@@ -34,7 +34,7 @@ libcomp = shared_library(
   include_directories: [includes],
   dependencies: [llvm_dep],
   override_options : ['cpp_std=c++20'],
-  cpp_args: ['-Wall', '-Wextra', '-fsanitize=address'],
+  cpp_args: ['-Wall', '-Wextra', '-fsanitize=address', '-Wno-unused-parameter'],
   link_args: ['-fsanitize=address']
 )
 
@@ -49,7 +49,7 @@ exe = executable('lang',
   dependencies: [llvm_dep, comp_dep],
   include_directories: [argparse, includes],
   override_options : ['cpp_std=c++20'],
-  cpp_args: ['--coverage', '-g', '-Wall', '-Wextra'],
+  cpp_args: ['--coverage', '-g', '-Wall', '-Wextra', '-Wno-unused-parameter'],
   link_args: ['--coverage', '-g'])
 
 project_dep = declare_dependency(
@@ -67,6 +67,7 @@ test('all_tests',
     files(tests),
     dependencies: [project_dep, test_dep],
     install: false,
-    override_options : ['cpp_std=c++20']
+    override_options : ['cpp_std=c++20'],
+    cpp_args: ['-Wno-unused-parameter']
   )
 )

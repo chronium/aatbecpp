@@ -167,7 +167,7 @@ public:
     return this->Peek(valueS) ? this->Read() : std::nullopt;
   }
 
-  // std::unique_ptr<ModuleNode *> Parse();
+  ParseResult<ModuleNode *> Parse();
 
   Memo Snapshot() const { return Memo{index}; }
   void Restore(Memo memo) { index = memo.Index(); }

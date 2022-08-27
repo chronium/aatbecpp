@@ -9,6 +9,8 @@
 #include <parser/parameters.hpp>
 #include <parser/expression.hpp>
 
+#include <codegen.hpp>
+
 namespace aatbe::parser {
 
 struct ModuleStatement {
@@ -41,6 +43,14 @@ struct FunctionStatement : ModuleStatement {
 
   ModuleStatementKind Kind() const override {
     return ModuleStatementKind::Function;
+  }
+
+  llvm::FunctionType *Type() {
+        std::vector<llvm::Type *> paramTypes;
+        for (auto &param : parameters->Bindings()) {
+          paramTypes.push_back(param->Type()->LLVMType());
+        }
+        return llvm::FunctionType::get(returnType->LLVMType(), paramTypes, false);
   }
 
   std::string Format() const override {
@@ -82,13 +92,27 @@ private:
 struct ModuleNode {
 public:
   explicit ModuleNode(
-      std::vector<std::unique_ptr<ModuleStatementNode>> statements)
+      std::vector<ModuleStatementNode *> statements)
       : statements(std::move(statements)) {}
+
+  auto Value() const { return this->statements; }
+  auto Kind() const { return ModuleStatementKind::Module; }
+  std::string Format() const {
+    std::string res = "Module(";
+
+    for (auto statement : statements) {
+      res += statement->Format() + ", ";
+    }
+
+    res += ")";
+
+    return res;
+  }
 
 private:
   std::string name;
 
-  std::vector<std::unique_ptr<ModuleStatementNode>> statements;
+  std::vector<ModuleStatementNode *> statements;
 };
 
 } // namespace aatbe::parser

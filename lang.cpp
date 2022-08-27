@@ -5,11 +5,9 @@
 #include <codegen.hpp>
 
 #include <lexer/lexer.hpp>
-#include <parser/parser.hpp>
 
 using namespace aatbe::lexer;
 using namespace aatbe::source;
-using namespace aatbe::parser;
 
 #define PROJECT_NAME "lang"
 
@@ -27,16 +25,6 @@ int main(int argc, char **argv) {
   }
 
   auto file = args.get("INPUT");
-  auto srcFile = SrcFile::FromFile(file);
-
-  Lexer lexer(std::move(srcFile));
-  auto tokens = lexer.Lex();
-
-  Parser parser(tokens);
-
-  auto mod = ParseModuleStatement(parser);
-
-  std::cout << mod.Format() << std::endl;
 
   auto module = aatbe::codegen::compile_file(file);
 

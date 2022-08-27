@@ -125,4 +125,17 @@ ParseResult<TerminalNode *> ParseTerminal(Parser &parser) {
   return ParserError(ParseErrorKind::UnexpectedEof, "");
 }
 
+ParseResult<ModuleNode *> Parser::Parse() {
+  auto statements = std::vector<ModuleStatementNode *>();
+
+  while (this->Peek()) {
+    if (auto statement = ParseModuleStatement(*this))
+      statements.push_back(statement.Node());
+    else
+      return ParserError(ParseErrorKind::UnexpectedToken, "");
+  }
+
+  return ParserSuccess(new ModuleNode(statements));
+}
+
 } // namespace aatbe::parser
