@@ -95,3 +95,18 @@ TEST(FunctionParser, Arguments) {
   EXPECT_EQ(Dig(function, Function, ReturnType)->Kind(), TypeKind::Unit);
   EXPECT_FALSE(Dig(function, Function, Body).has_value());
 }
+
+TEST(FunctionParser, VariadicArgument) {
+  auto tokens = makeTokens("fn foo (fmt: str, ...)");
+  Parser parser(tokens);
+
+  auto function = ParseModuleStatement(parser);
+
+  EXPECT_TRUE(function);
+  EXPECT_FALSE(Dig(function, Function, IsExtern));
+  EXPECT_TRUE(Dig(function, Function, IsVariadic));
+  EXPECT_EQ(Dig(function, Function, Name), "foo");
+  EXPECT_EQ(Dig(function, Function, Parameters)->Size(), 1);
+  EXPECT_EQ(Dig(function, Function, ReturnType)->Kind(), TypeKind::Unit);
+  EXPECT_FALSE(Dig(function, Function, Body).has_value());
+}

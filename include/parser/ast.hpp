@@ -29,15 +29,17 @@ struct FunctionStatement : ModuleStatement {
   FunctionStatement() = delete;
 
   FunctionStatement(bool isExtern, std::string name, ParameterList *parameters,
-                    TypeNode *returnType, std::optional<ExpressionNode *> body)
+                    TypeNode *returnType, std::optional<ExpressionNode *> body,
+                    bool isVariadic)
       : isExtern(isExtern), name(std::move(name)), parameters(parameters),
-        returnType(returnType), body(body) {}
+        returnType(returnType), body(body), isVariadic(isVariadic) {}
 
   auto Name() const { return this->name; }
   auto Parameters() const { return this->parameters; }
   auto ReturnType() const { return this->returnType; }
   auto Body() const { return this->body; }
   auto IsExtern() const { return this->isExtern; }
+  auto IsVariadic() const { return this->isVariadic; }
 
   auto Value() const { return std::make_tuple(name, parameters, returnType); }
 
@@ -46,16 +48,18 @@ struct FunctionStatement : ModuleStatement {
   }
 
   llvm::FunctionType *Type() {
-        std::vector<llvm::Type *> paramTypes;
-        for (auto &param : parameters->Bindings()) {
-          paramTypes.push_back(param->Type()->LLVMType());
-        }
-        return llvm::FunctionType::get(returnType->LLVMType(), paramTypes, false);
+    std::vector<llvm::Type *> paramTypes;
+    for (auto &param : parameters->Bindings()) {
+      paramTypes.push_back(param->Type()->LLVMType());
+    }
+    return llvm::FunctionType::get(returnType->LLVMType(), paramTypes, false);
   }
 
   std::string Format() const override {
-    auto res = "Function(" + name + ", args " + parameters->Format() +
-               ", ret " + returnType->Format() + ")";
+    std::string ext = isExtern ? "Extern" : "";
+    auto variadic = isVariadic ? "Variadic" : "";
+    auto res = ext + variadic + "Function(" + name + ", args " +
+               parameters->Format() + ", ret " + returnType->Format() + ")";
 
     if (body.has_value()) {
       res += " = " + body.value()->Format();
@@ -70,6 +74,7 @@ private:
   ParameterList *parameters;
   TypeNode *returnType;
   std::optional<ExpressionNode *> body;
+  bool isVariadic;
 };
 
 struct ModuleStatementNode {
@@ -91,8 +96,7 @@ private:
 
 struct ModuleNode {
 public:
-  explicit ModuleNode(
-      std::vector<ModuleStatementNode *> statements)
+  explicit ModuleNode(std::vector<ModuleStatementNode *> statements)
       : statements(std::move(statements)) {}
 
   auto Value() const { return this->statements; }

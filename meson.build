@@ -17,6 +17,7 @@ sources = [
   'src/parser/parser.cpp',
   'src/parser/type.cpp',
   'src/parser/expression.cpp',
+  'src/codegen/expression.cpp',
 ]
 
 tests = [

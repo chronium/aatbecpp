@@ -42,3 +42,14 @@ TEST(ExpressionParser, Call) {
   EXPECT_EQ(Indirect(calleeNode, Identifier), "printf");
   EXPECT_EQ(argsNode->Size(), 2);
 }
+
+TEST(ExpressionParser, Block) {
+  auto tokens = makeTokens(R"({ 1; 2; 3 })");
+  Parser parser(tokens);
+
+  auto expr = ParseExpression(parser);
+
+  EXPECT_TRUE(expr);
+  EXPECT_EQ(expr.Kind(), ExpressionKind::Block);
+  EXPECT_EQ(Dig(expr, Block, Size), 3);
+}

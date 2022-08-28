@@ -63,10 +63,18 @@ ParseResult<AtomExpression *> ParseUnitAtom(Parser &parser) {
   return ParserError(ParseErrorKind::ExpectedToken, "");
 }
 
+ParseResult<BlockExpression *> ParseBlock(Parser &parser) {
+  auto exprs = Deffer(new BlockExpression(parser.DelimitedBy(
+      Deffer(ParseExpression(parser).Node()), TokenKind::Symbol, ";")));
+  return parser.SurroundedBy(exprs, TokenKind::Symbol, "{", TokenKind::Symbol,
+                             "}");
+}
+
 ParseResult<ExpressionNode *> ParseExpression(Parser &parser) {
   TryReturn(parser.Try(ParseUnary).WrapWith<ExpressionNode>());
   TryReturn(parser.Try(ParseUnitAtom).WrapWith<ExpressionNode>());
   TryReturn(parser.Try(ParseTuple).WrapWith<ExpressionNode>());
+  TryReturn(parser.Try(ParseBlock).WrapWith<ExpressionNode>());
 
   ErrorOrContinue(atom, ParseAtom(parser).WrapWith<ExpressionNode>());
 

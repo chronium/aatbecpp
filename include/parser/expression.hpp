@@ -16,6 +16,7 @@ enum ExpressionKind : int {
   Atom,
   Call,
   Tuple,
+  Block,
 };
 
 struct Expression {
@@ -46,6 +47,7 @@ struct UnaryExpression;
 struct BinaryExpression;
 struct TupleExpression;
 struct CallExpression;
+struct BlockExpression;
 
 struct ExpressionNode {
   ExpressionNode() = delete;
@@ -65,6 +67,8 @@ struct ExpressionNode {
   auto AsBinary() { return (BinaryExpression *)value; }
 
   auto AsCall() { return (CallExpression *)value; }
+
+  auto AsBlock() { return (BlockExpression *)value; }
 
   auto Node() const { return this; }
 
@@ -234,6 +238,28 @@ struct CallExpression : public Expression {
 private:
   ExpressionNode *callee;
   ExpressionNode *args;
+};
+
+struct BlockExpression : public Expression {
+  BlockExpression() = delete;
+  BlockExpression(std::vector<ExpressionNode *> statements)
+      : statements(std::move(statements)) {}
+
+  std::string Format() const override {
+    std::string result = "{";
+    for (auto statement : statements) {
+      result += statement->Format() + "; ";
+    }
+    result += "}";
+    return result;
+  }
+
+  auto Value() const { return this->statements; }
+  auto Size() const { return this->statements.size(); }
+  ExpressionKind Kind() const override { return ExpressionKind::Block; }
+
+private:
+  std::vector<ExpressionNode *> statements;
 };
 
 } // namespace aatbe::parser

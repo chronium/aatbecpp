@@ -143,7 +143,7 @@ TEST(Lexer, Symbol) {
 
   auto symbols = std::vector<std::string>(begin, end);
 
-  for (auto symbol : symbols) {
+  for (const auto& symbol : symbols) {
     auto symbol_tok = lexer->Next();
     EXPECT_TOKEN_SYM(symbol_tok, symbol.c_str());
   }
@@ -162,7 +162,7 @@ TEST(Lexer, Keyword) {
 
   auto keywords = std::vector<std::string>(begin, end);
 
-  for (auto keyword : keywords) {
+  for (const auto& keyword : keywords) {
     auto keyword_tok = lexer->Next();
     EXPECT_TOKEN_KW(keyword_tok, keyword.c_str());
   }

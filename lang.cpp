@@ -28,7 +28,7 @@ int main(int argc, char **argv) {
 
   auto module = aatbe::codegen::compile_file(file);
 
-  module->print(llvm::errs(), nullptr);
+  module->print(llvm::outs(), nullptr);
 
   return 0;
 }

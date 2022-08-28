@@ -9,6 +9,7 @@
 #include <utility>
 #include <vector>
 #include <variant>
+#include <cassert>
 
 using namespace aatbe::lexer;
 
@@ -92,12 +93,27 @@ public:
     return std::holds_alternative<SuccessType>(value);
   }
 
-  auto Node() { return std::get<SuccessType>(value).Value(); }
-  auto Kind() { return std::get<SuccessType>(value).Value()->Kind(); }
-  auto Value() { return std::get<SuccessType>(value).Value()->Value(); }
-  auto Format() { return std::get<SuccessType>(value).Value()->Format(); }
+  auto Node() {
+    assert(this->operator bool());
+    return std::get<SuccessType>(value).Value();
+  }
+  auto Kind() {
+    assert(this->operator bool());
+    return std::get<SuccessType>(value).Value()->Kind();
+  }
+  auto Value() {
+    assert(this->operator bool());
+    return std::get<SuccessType>(value).Value()->Value();
+  }
+  auto Format() {
+    assert(this->operator bool());
+    return std::get<SuccessType>(value).Value()->Format();
+  }
   ErrorType &Error() { return std::get<ErrorType>(value); }
-  const SuccessType &Value() const { return std::get<SuccessType>(value); }
+  const SuccessType &Value() const {
+    assert(this->operator bool());
+    return std::get<SuccessType>(value);
+  }
   const ErrorType &Error() const { return std::get<ErrorType>(value); }
 
   template <typename T, typename... Args>
@@ -107,6 +123,7 @@ public:
     else
       return this->Error();
   }
+
 private:
   Type value;
 };

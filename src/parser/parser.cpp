@@ -3,6 +3,7 @@
 //
 
 #include <cassert>
+#include <memory>
 
 #include <lexer/lexer.hpp>
 #include <parser/ast.hpp>
@@ -62,17 +63,30 @@ ParseResult<FunctionStatement *> ParseFunction(Parser &parser) {
   ErrorOrContinue(name, ParseIdentifier(parser));
 
   auto argList = Deffer(new ParameterList(parser.DelimitedBy(
-      Deffer(ParseParameter(parser).Node()), TokenKind::Symbol, ",")));
+      [](Parser &parser) {
+        if (auto param = ParseParameter(parser))
+          return param.Node();
+        else
+          return (ParameterBinding *)nullptr;
+      },
+      TokenKind::Symbol, ",")));
 
+  auto isVariadic = false;
   ParseResult<ParameterList *> args =
       ParserSuccess(new ParameterList(std::vector<ParameterBinding *>{}));
   if (parser.Peek("(", 0) && parser.Peek(")", 1)) {
     parser.Read();
     parser.Read();
   } else if (!parser.Peek(TokenKind::Symbol, "->") &&
-             !parser.Peek(TokenKind::Symbol, "=") && parser.Peek())
-    args = parser.SurroundedBy(argList, TokenKind::Symbol, "(",
-                               TokenKind::Symbol, ")");
+             !parser.Peek(TokenKind::Symbol, "=") && parser.Peek()) {
+    args = parser.SurroundedBy(
+        [argList, &isVariadic](Parser &parser) {
+          auto list = argList(parser);
+          isVariadic = parser.Read("...").has_value();
+          return list;
+        },
+        TokenKind::Symbol, "(", TokenKind::Symbol, ")");
+  }
 
   auto returnType = new TypeNode(new UnitType());
 
@@ -83,10 +97,13 @@ ParseResult<FunctionStatement *> ParseFunction(Parser &parser) {
       return ParserError(ParseErrorKind::ExpectedType, "");
   }
 
-  auto body = parser.Read(TokenKind::Symbol, "=") ? std::optional(ParseExpression(parser).Node()) : std::nullopt;
+  auto body = parser.Read(TokenKind::Symbol, "=")
+                  ? std::optional(ParseExpression(parser).Node())
+                  : std::nullopt;
 
-  return ParserSuccess(new FunctionStatement(
-      isExtern, name.Node()->Value(), args.Node(), returnType, body));
+  return ParserSuccess(new FunctionStatement(isExtern, name.Node()->Value(),
+                                             args.Node(), returnType, body,
+                                             isVariadic));
 }
 
 ParseResult<ModuleStatementNode *> ParseModuleStatement(Parser &parser) {
