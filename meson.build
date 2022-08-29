@@ -18,6 +18,7 @@ sources = [
   'src/parser/type.cpp',
   'src/parser/expression.cpp',
   'src/codegen/expression.cpp',
+  'src/jit.cpp',
 ]
 
 tests = [
@@ -50,8 +51,7 @@ exe = executable('lang',
   dependencies: [llvm_dep, comp_dep],
   include_directories: [argparse, includes],
   override_options : ['cpp_std=c++20'],
-  cpp_args: ['--coverage', '-g', '-Wall', '-Wextra', '-Wno-unused-parameter'],
-  link_args: ['--coverage', '-g'])
+  cpp_args: ['-Wall', '-Wextra', '-Wno-unused-parameter'])
 
 project_dep = declare_dependency(
   include_directories: [includes],

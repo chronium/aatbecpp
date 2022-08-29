@@ -13,14 +13,12 @@ using namespace aatbe::parser;
 
 namespace aatbe::codegen {
 
-static std::shared_ptr<llvm::LLVMContext> Context;
-static std::shared_ptr<llvm::IRBuilder<>> Builder;
-static std::shared_ptr<llvm::Module> Module;
-static std::shared_ptr<CompilerContext> CompContext;
+std::unique_ptr<llvm::LLVMContext> LLVMContext;
+std::shared_ptr<llvm::IRBuilder<>> Builder;
+std::unique_ptr<llvm::Module> Module;
+std::shared_ptr<CompilerContext> CompContext;
 
-std::shared_ptr<llvm::LLVMContext> GetLLVMContext() { return Context; }
 std::shared_ptr<llvm::IRBuilder<>> GetLLVMBuilder() { return Builder; }
-std::shared_ptr<llvm::Module> GetLLVMModule() { return Module; }
 std::shared_ptr<CompilerContext> GetCompilerContext() { return CompContext; }
 
 auto DeclPass(ModuleNode *mod) {
@@ -31,7 +29,6 @@ auto DeclPass(ModuleNode *mod) {
       auto funcType = funcDecl->Type();
       auto funcName = funcDecl->Name();
       auto funcParams = funcDecl->Parameters();
-      auto funcVariadic = funcDecl->IsVariadic();
 
       std::vector<llvm::Type *> paramTypes;
       for (auto &param : funcParams->Bindings()) {
@@ -40,8 +37,7 @@ auto DeclPass(ModuleNode *mod) {
 
       GetCompilerContext()->CurrentScope()->SetFunction(
           funcName,
-          llvm::Function::Create(
-              llvm::FunctionType::get(funcType, paramTypes, funcVariadic),
+          llvm::Function::Create(funcType,
               llvm::Function::ExternalLinkage, funcName, Module.get()));
 
       break;
@@ -66,8 +62,8 @@ auto CodegenPass(ModuleNode *mod) {
       auto func = Module->getFunction(funcName);
 
       auto bb = funcName == "main"
-                    ? llvm::BasicBlock::Create(*Context, "entry", func)
-                    : llvm::BasicBlock::Create(*Context, "", func);
+                    ? llvm::BasicBlock::Create(*LLVMContext, "entry", func)
+                    : llvm::BasicBlock::Create(*LLVMContext, "", func);
 
       Builder->SetInsertPoint(bb);
 
@@ -90,10 +86,10 @@ auto CodegenPass(ModuleNode *mod) {
   }
 }
 
-std::shared_ptr<llvm::Module> compile_file(const std::string &file) {
-  Context = std::make_shared<llvm::LLVMContext>();
-  Module = std::make_shared<llvm::Module>(file, *Context);
-  Builder = std::make_shared<llvm::IRBuilder<>>(*Context);
+void compile_file(const std::string &file) {
+  LLVMContext = std::make_unique<llvm::LLVMContext>();
+  Module = std::make_unique<llvm::Module>(file, *LLVMContext);
+  Builder = std::make_shared<llvm::IRBuilder<>>(*LLVMContext);
   CompContext = std::make_shared<CompilerContext>();
 
   auto srcFile = SrcFile::FromFile(file);
@@ -104,13 +100,12 @@ std::shared_ptr<llvm::Module> compile_file(const std::string &file) {
   Parser parser(tokens);
 
   auto mod = parser.Parse();
+  printf("%s\n", mod.Format().c_str());
 
   CompContext->EnterScope("root");
   DeclPass(mod.Node());
   CodegenPass(mod.Node());
   CompContext->ExitScope();
-
-  return std::move(Module);
 }
 
 } // namespace aatbe::codegen

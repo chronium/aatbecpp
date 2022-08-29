@@ -112,12 +112,27 @@ ParseResult<ModuleStatementNode *> ParseModuleStatement(Parser &parser) {
   return ParserError(ParseErrorKind::UnexpectedToken, "");
 }
 
+ParseResult<IntegerTerm *> ParseNumber(Parser &parser) {
+  if (auto token = parser.Peek()) {
+    if (token->get()->Kind() == TokenKind::Number) {
+      parser.Read();
+      if (auto type = ParseType(parser))
+        return ParserSuccess(
+            new IntegerTerm(token->get()->ValueI(), type.Node()));
+      else
+        return ParserSuccess(
+            new IntegerTerm(token->get()->ValueI(),
+                            new TypeNode(new SIntType(TypeKind::Int64))));
+    }
+  }
+  return ParserError(ParseErrorKind::UnexpectedToken, "");
+}
+
 ParseResult<TerminalNode *> ParseTerminal(Parser &parser) {
   if (auto token = parser.Peek()) {
     switch (token->get()->Kind()) {
     case TokenKind::Number:
-      return ParserSuccess(
-          new TerminalNode(new IntegerTerm(parser.Read()->get()->ValueI())));
+      return ParseNumber(parser).WrapWith<TerminalNode>();
     case TokenKind::Char:
       return ParserSuccess(
           new TerminalNode(new CharTerm(parser.Read()->get()->ValueS()[0])));
@@ -153,6 +168,32 @@ ParseResult<ModuleNode *> Parser::Parse() {
   }
 
   return ParserSuccess(new ModuleNode(statements));
+}
+
+void replace_all(
+    std::string& s,
+    std::string const& toReplace,
+    std::string const& replaceWith
+) {
+  std::string buf;
+  std::size_t pos = 0;
+  std::size_t prevPos;
+
+  // Reserves rough estimate of final size of string.
+  buf.reserve(s.size());
+
+  while (true) {
+    prevPos = pos;
+    pos = s.find(toReplace, pos);
+    if (pos == std::string::npos)
+      break;
+    buf.append(s, prevPos, pos - prevPos);
+    buf += replaceWith;
+    pos += toReplace.size();
+  }
+
+  buf.append(s, prevPos, s.size() - prevPos);
+  s.swap(buf);
 }
 
 } // namespace aatbe::parser

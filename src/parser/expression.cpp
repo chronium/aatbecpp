@@ -64,8 +64,14 @@ ParseResult<AtomExpression *> ParseUnitAtom(Parser &parser) {
 }
 
 ParseResult<BlockExpression *> ParseBlock(Parser &parser) {
-  auto exprs = Deffer(new BlockExpression(parser.DelimitedBy(
-      Deffer(ParseExpression(parser).Node()), TokenKind::Symbol, ";")));
+  auto exprs = [](Parser &parser) {
+    std::vector<ExpressionNode *> vec;
+    while (auto expr = ParseExpression(parser)) {
+      vec.push_back(expr.Node());
+      parser.Read(TokenKind::Symbol, ";");
+    }
+    return new BlockExpression(vec);
+  };
   return parser.SurroundedBy(exprs, TokenKind::Symbol, "{", TokenKind::Symbol,
                              "}");
 }

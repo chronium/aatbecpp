@@ -44,7 +44,7 @@ TEST(ExpressionParser, Call) {
 }
 
 TEST(ExpressionParser, Block) {
-  auto tokens = makeTokens(R"({ 1; 2; 3 })");
+  auto tokens = makeTokens(R"({ 1 2; 3 })");
   Parser parser(tokens);
 
   auto expr = ParseExpression(parser);

@@ -5,12 +5,19 @@
 #pragma once
 
 #include <lexer/token.hpp>
+#include <parser/type.hpp>
 
 #include <vector>
 
 using namespace aatbe::lexer;
 
 namespace aatbe::parser {
+
+void replace_all(
+    std::string& s,
+    std::string const& toReplace,
+    std::string const& replaceWith
+);
 
 enum TerminalKind : int { Boolean, Integer, Character, String, Identifier, UnitVal };
 
@@ -41,17 +48,19 @@ private:
 };
 
 struct IntegerTerm : public Terminal {
-  explicit IntegerTerm(uint64_t value)
-      : kind(TerminalKind::Integer), value(value) {}
+  explicit IntegerTerm(uint64_t value, TypeNode *type)
+      : kind(TerminalKind::Integer), value(value), type(type) {}
 
   uint64_t Value() const { return value; }
   TerminalKind Kind() const override { return this->kind; }
+  TypeNode *Type() const { return type; }
 
   std::string Format() const override { return std::to_string(value); }
 
 private:
   TerminalKind kind;
   uint64_t value;
+  TypeNode *type;
 };
 
 struct CharTerm : public Terminal {
@@ -75,7 +84,11 @@ struct StringTerm : public Terminal {
   TerminalKind Kind() const override { return this->kind; }
 
   std::string Format() const override {
-    return std::string("\"") + value + "\"";
+    auto ret = std::string(this->value);
+    replace_all(ret, "\\", "\\\\");
+    replace_all(ret, "\"", "\\\"");
+    replace_all(ret, "\n", "\\n");
+    return std::string("\"") + ret + "\"";
   }
 
 private:

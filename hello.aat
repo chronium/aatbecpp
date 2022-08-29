@@ -1,3 +1,9 @@
-fn printf (fmt: str, ...) -> int32
+fn _printf (fmt: str, ...) -> int32
+fn _puts (_str: str) -> int32
 
-fn main = printf("Hello %s!\n", "World")
+fn main (argc: int32, argv: ptr str)-> int32 = {
+    _printf("Hello World!\n")
+    _puts("Now I need to start work on conditionals, loops, imports, lots of things.\n")
+
+    0int32
+}

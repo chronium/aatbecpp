@@ -123,3 +123,27 @@ TEST(TerminalParser, Unit) {
   EXPECT_TRUE(a);
   EXPECT_EQ(a.Kind(), TerminalKind::UnitVal);
 }
+
+TEST(TerminalParser, SizedNumbers) {
+  auto tokens = makeTokens("123int8 512uint64 0x1234int8");
+  Parser parser(tokens);
+
+  auto a = ParseTerminal(parser);
+  auto b = ParseTerminal(parser);
+  auto c = ParseTerminal(parser);
+
+  EXPECT_TRUE(a);
+  EXPECT_EQ(a.Kind(), TerminalKind::Integer);
+  EXPECT_EQ(Unwrap(a, Integer), 123);
+  EXPECT_EQ(Dig(a, Integer, Type)->Kind(), TypeKind::Int8);
+
+  EXPECT_TRUE(b);
+  EXPECT_EQ(b.Kind(), TerminalKind::Integer);
+  EXPECT_EQ(Unwrap(b, Integer), 512);
+  EXPECT_EQ(Dig(b, Integer, Type)->Kind(), TypeKind::UInt64);
+
+  EXPECT_TRUE(c);
+  EXPECT_EQ(c.Kind(), TerminalKind::Integer);
+  EXPECT_EQ(Unwrap(c, Integer), 0x1234);
+  EXPECT_EQ(Dig(c, Integer, Type)->Kind(), TypeKind::Int8);
+}

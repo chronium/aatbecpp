@@ -7,10 +7,13 @@
 
 namespace aatbe::codegen {
 
-std::shared_ptr<llvm::LLVMContext> GetLLVMContext();
+extern std::unique_ptr<llvm::LLVMContext> LLVMContext;
+extern std::shared_ptr<llvm::IRBuilder<>> Builder;
+extern std::unique_ptr<llvm::Module> Module;
+extern std::shared_ptr<CompilerContext> CompContext;
+
 std::shared_ptr<llvm::IRBuilder<>> GetLLVMBuilder();
-std::shared_ptr<llvm::Module> GetLLVMModule();
 std::shared_ptr<CompilerContext> GetCompilerContext();
 
-std::shared_ptr<llvm::Module> compile_file(const std::string &file);
+void compile_file(const std::string &file);
 } // namespace aatbe::codegen
