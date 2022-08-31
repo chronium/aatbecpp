@@ -76,11 +76,42 @@ ParseResult<BlockExpression *> ParseBlock(Parser &parser) {
                              "}");
 }
 
+ParseResult<IfExpression *> ParseIf(Parser &parser) {
+  if (!parser.Read(TokenKind::Keyword, "if"))
+    return ParserError(ParseErrorKind::ExpectedToken, "");
+
+  std::vector<std::tuple<ExpressionNode *, ExpressionNode *>> branches;
+
+  ErrorOrContinue(if_cond, ParseExpression(parser));
+  parser.Read(TokenKind::Keyword, "then"); // `then` optional after if condition
+  ErrorOrContinue(if_body, ParseExpression(parser));
+
+  // First if clause
+  branches.emplace_back(if_cond.Node(), if_body.Node());
+
+  // Else if clauses
+  while (parser.Read(TokenKind::Keyword, "else")) {
+    if (parser.Read(TokenKind::Keyword, "if")) {
+      ErrorOrContinue(else_if_cond, ParseExpression(parser));
+      parser.Read(TokenKind::Keyword, "then"); // `then` optional after if condition
+      ErrorOrContinue(else_if_body, ParseExpression(parser));
+      branches.emplace_back(else_if_cond.Node(), else_if_body.Node());
+    } else {
+      ErrorOrContinue(else_body, ParseExpression(parser));
+      branches.emplace_back(nullptr, else_body.Node());
+      break;
+    }
+  }
+
+  return ParserSuccess(new IfExpression(branches));
+}
+
 ParseResult<ExpressionNode *> ParseExpression(Parser &parser) {
   TryReturn(parser.Try(ParseUnary).WrapWith<ExpressionNode>());
   TryReturn(parser.Try(ParseUnitAtom).WrapWith<ExpressionNode>());
   TryReturn(parser.Try(ParseTuple).WrapWith<ExpressionNode>());
   TryReturn(parser.Try(ParseBlock).WrapWith<ExpressionNode>());
+  TryReturn(parser.Try(ParseIf).WrapWith<ExpressionNode>());
 
   ErrorOrContinue(atom, ParseAtom(parser).WrapWith<ExpressionNode>());
 

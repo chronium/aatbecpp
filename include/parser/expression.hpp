@@ -17,6 +17,7 @@ enum ExpressionKind : int {
   Call,
   Tuple,
   Block,
+  If,
 };
 
 struct Expression {
@@ -48,6 +49,7 @@ struct BinaryExpression;
 struct TupleExpression;
 struct CallExpression;
 struct BlockExpression;
+struct IfExpression;
 
 struct ExpressionNode {
   ExpressionNode() = delete;
@@ -69,6 +71,8 @@ struct ExpressionNode {
   auto AsCall() { return (CallExpression *)value; }
 
   auto AsBlock() { return (BlockExpression *)value; }
+
+  auto AsIf() { return (IfExpression *)value; }
 
   auto Node() const { return this; }
 
@@ -242,7 +246,7 @@ private:
 
 struct BlockExpression : public Expression {
   BlockExpression() = delete;
-  BlockExpression(std::vector<ExpressionNode *> statements)
+  explicit BlockExpression(std::vector<ExpressionNode *> statements)
       : statements(std::move(statements)) {}
 
   std::string Format() const override {
@@ -260,6 +264,32 @@ struct BlockExpression : public Expression {
 
 private:
   std::vector<ExpressionNode *> statements;
+};
+
+struct IfExpression : public Expression {
+  IfExpression() = delete;
+  IfExpression(
+      std::vector<std::tuple<ExpressionNode *, ExpressionNode *>> branches)
+      : branches(std::move(branches)) {}
+
+  std::string Format() const override {
+    std::string result = "If(";
+    for (const auto &branch : branches)
+      result += "(" + std::get<0>(branch)->Format() + " -> " +
+                std::get<1>(branch)->Format() + "), ";
+    result += ")";
+    return result;
+  }
+
+  auto Value() const { return this->branches; }
+  auto Size() const { return this->branches.size(); }
+
+  auto &Branches() const { return this->branches; }
+
+  ExpressionKind Kind() const override { return ExpressionKind::If; }
+
+private:
+  std::vector<std::tuple<ExpressionNode *, ExpressionNode *>> branches;
 };
 
 } // namespace aatbe::parser
