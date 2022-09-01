@@ -1,9 +1,14 @@
-fn _printf (fmt: str, ...) -> int32
-fn _puts (_str: str) -> int32
+fn printf (fmt: str, ...) -> int32
+fn puts (_str: str) -> int32
 
 fn main (argc: int32, argv: ptr str)-> int32 = {
-    _printf("Hello World!\n")
-    _puts("Now I need to start work on conditionals, loops, imports, lots of things.\n")
+    printf("Hello World!\n")
+    puts("Now I need to start work on conditionals, loops, imports, lots of things.\n")
+
+    if true then puts("true!")
+
+    if false then puts("true!")
+    else puts("false!")
 
     0int32
 }

@@ -279,8 +279,11 @@ struct IfExpression : public Expression {
   std::string Format() const override {
     std::string result = "If(";
     for (const auto &branch : branches)
-      result += "(" + std::get<0>(branch)->Format() + " -> " +
-                std::get<1>(branch)->Format() + "), ";
+      if (std::get<0>(branch) != nullptr)
+        result += std::get<0>(branch)->Format() + " -> " +
+                  std::get<1>(branch)->Format() + ", ";
+      else
+        result += "else -> " + std::get<1>(branch)->Format() + ", ";
     result += ")";
     return result;
   }

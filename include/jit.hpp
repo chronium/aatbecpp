@@ -34,8 +34,7 @@ public:
                      std::make_unique<ConcurrentIRCompiler>(std::move(JTMB))),
         MainJD(this->ES->createBareJITDylib("<main>")) {
     MainJD.addGenerator(
-        cantFail(DynamicLibrarySearchGenerator::GetForCurrentProcess(
-            this->DL.getGlobalPrefix())));
+        cantFail(DynamicLibrarySearchGenerator::GetForCurrentProcess(0)));
   }
 
   ~AatbeJit() {

@@ -5,8 +5,6 @@
 #include <codegen.hpp>
 #include <codegen/expression.hpp>
 
-#include <parser/type.hpp>
-
 #include <llvm/IR/Constants.h>
 
 namespace aatbe::codegen {
@@ -56,6 +54,10 @@ std::optional<llvm::Value *> CodegenExpression(ExpressionNode *expression) {
       }
     }
     return result;
+  case ExpressionKind::If:
+    return CodegenIf(expression->AsIf());
+  case ExpressionKind::Loop:
+    assert(nullptr);
   default:
     return {};
   }
@@ -103,9 +105,91 @@ std::optional<llvm::Value *> CodegenAtom(AtomExpression *atom) {
     return ConstantInteger(term->AsInteger());
   case TerminalKind::String:
     return GetLLVMBuilder()->CreateGlobalStringPtr(term->AsString()->Value());
+  case TerminalKind::Boolean:
+    return llvm::ConstantInt::get(GetLLVMBuilder()->getInt1Ty(),
+                                  term->AsBoolean()->Value());
   default:
     return std::nullopt;
   }
+}
+
+std::optional<llvm::Value *> CodegenIf(IfExpression *ifExpr) {
+  auto hasElse =
+      std::get<0>(ifExpr->Value()[ifExpr->Value().size() - 1]) == nullptr;
+  llvm::Type *bodyType = nullptr;
+
+  auto function = GetLLVMBuilder()->GetInsertBlock()->getParent();
+  auto &entry = function->getEntryBlock();
+
+  std::vector<llvm::BasicBlock *> branchBlocks;
+  std::vector<llvm::Value *> branchValues;
+
+  auto mergeBlock = llvm::BasicBlock::Create(*LLVMContext, "merge");
+
+  // Create target blocks
+  for (size_t _i = 0; _i < ifExpr->Size(); _i++) {
+    auto thenBlock = llvm::BasicBlock::Create(*LLVMContext, "branch", function);
+    branchBlocks.push_back(thenBlock);
+  }
+
+  // Create jump list
+  for (size_t i = 0; i < ifExpr->Size() - hasElse; i++) {
+    auto expr = std::get<0>(ifExpr->Value()[i]);
+    auto condition = CodegenExpression(expr);
+    if (!condition) {
+      return std::nullopt;
+    }
+
+    auto thenBlock = branchBlocks[i];
+    auto bailBlock =
+        hasElse ? branchBlocks[ifExpr->Value().size() - 1] : mergeBlock;
+
+    GetLLVMBuilder()->CreateCondBr(
+        GetLLVMBuilder()->CreateICmpEQ(
+            condition.value(),
+            llvm::ConstantInt::get(GetLLVMBuilder()->getInt1Ty(), 1, true)),
+        thenBlock, bailBlock);
+  }
+
+  // FillBlocks
+  for (size_t i = 0; i < ifExpr->Size(); i++) {
+    auto expr = std::get<1>(ifExpr->Value()[i]);
+    auto thenBlock = branchBlocks[i];
+
+    GetLLVMBuilder()->SetInsertPoint(thenBlock);
+    auto result = CodegenExpression(expr);
+    if (!result) {
+      return std::nullopt;
+    }
+
+    if (bodyType == nullptr && result.has_value())
+      bodyType = result.value()->getType();
+    else
+      assert(bodyType == result.value()->getType());
+
+    branchValues.push_back(result.value());
+
+    GetLLVMBuilder()->CreateBr(mergeBlock);
+  }
+
+  function->getBasicBlockList().push_back(mergeBlock);
+  GetLLVMBuilder()->SetInsertPoint(mergeBlock);
+
+  if (bodyType == nullptr)
+    return llvm::ConstantDataSequential::getNullValue(
+        GetLLVMBuilder()->getVoidTy());
+
+  auto phi = GetLLVMBuilder()->CreatePHI(bodyType, ifExpr->Size());
+
+  for (size_t i = 0; i < ifExpr->Size(); i++) {
+    phi->addIncoming(branchValues[i], branchBlocks[i]);
+  }
+
+  if (!hasElse)
+    phi->addIncoming(llvm::ConstantDataSequential::getNullValue(bodyType),
+                     &entry);
+
+  return phi;
 }
 
 } // namespace aatbe::codegen
