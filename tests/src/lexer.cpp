@@ -153,7 +153,7 @@ TEST(Lexer, Keyword) {
   auto input = "if else while for break continue return then "
                "fn in var val from use module export "
                "const global type struct enum as "
-               "extern ref ptr";
+               "extern ref ptr loop";
   auto lexer = makeLexer(makeFile(input));
 
   std::stringstream stream(input);
@@ -162,7 +162,7 @@ TEST(Lexer, Keyword) {
 
   auto keywords = std::vector<std::string>(begin, end);
 
-  for (const auto& keyword : keywords) {
+  for (const auto &keyword : keywords) {
     auto keyword_tok = lexer->Next();
     EXPECT_TOKEN_KW(keyword_tok, keyword.c_str());
   }

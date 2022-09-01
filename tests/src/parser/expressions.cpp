@@ -108,3 +108,13 @@ TEST(ExpressionParser, IfElseIfElse) {
   EXPECT_EQ(expr.Kind(), ExpressionKind::If);
   EXPECT_EQ(Dig(expr, If, Size), 3);
 }
+
+TEST(ExpressionParser, Loop) {
+  auto tokens = makeTokens(R"(loop 1)");
+  Parser parser(tokens);
+
+  auto expr = ParseExpression(parser);
+
+  EXPECT_TRUE(expr);
+  EXPECT_EQ(expr.Kind(), ExpressionKind::Loop);
+}

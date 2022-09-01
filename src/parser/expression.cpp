@@ -93,7 +93,8 @@ ParseResult<IfExpression *> ParseIf(Parser &parser) {
   while (parser.Read(TokenKind::Keyword, "else")) {
     if (parser.Read(TokenKind::Keyword, "if")) {
       ErrorOrContinue(else_if_cond, ParseExpression(parser));
-      parser.Read(TokenKind::Keyword, "then"); // `then` optional after if condition
+      parser.Read(TokenKind::Keyword,
+                  "then"); // `then` optional after if condition
       ErrorOrContinue(else_if_body, ParseExpression(parser));
       branches.emplace_back(else_if_cond.Node(), else_if_body.Node());
     } else {
@@ -106,12 +107,22 @@ ParseResult<IfExpression *> ParseIf(Parser &parser) {
   return ParserSuccess(new IfExpression(branches));
 }
 
+ParseResult<LoopExpression *> ParseLoop(Parser &parser) {
+  if (!parser.Read(TokenKind::Keyword, "loop"))
+    return ParserError(ParseErrorKind::ExpectedToken, "");
+
+  ErrorOrContinue(body, ParseExpression(parser));
+
+  return ParserSuccess(new LoopExpression(body.Node()));
+}
+
 ParseResult<ExpressionNode *> ParseExpression(Parser &parser) {
   TryReturn(parser.Try(ParseUnary).WrapWith<ExpressionNode>());
   TryReturn(parser.Try(ParseUnitAtom).WrapWith<ExpressionNode>());
   TryReturn(parser.Try(ParseTuple).WrapWith<ExpressionNode>());
   TryReturn(parser.Try(ParseBlock).WrapWith<ExpressionNode>());
   TryReturn(parser.Try(ParseIf).WrapWith<ExpressionNode>());
+  TryReturn(parser.Try(ParseLoop).WrapWith<ExpressionNode>());
 
   ErrorOrContinue(atom, ParseAtom(parser).WrapWith<ExpressionNode>());
 

@@ -18,6 +18,7 @@ enum ExpressionKind : int {
   Tuple,
   Block,
   If,
+  Loop
 };
 
 struct Expression {
@@ -50,6 +51,7 @@ struct TupleExpression;
 struct CallExpression;
 struct BlockExpression;
 struct IfExpression;
+struct LoopExpression;
 
 struct ExpressionNode {
   ExpressionNode() = delete;
@@ -73,6 +75,8 @@ struct ExpressionNode {
   auto AsBlock() { return (BlockExpression *)value; }
 
   auto AsIf() { return (IfExpression *)value; }
+
+  auto AsLoop() { return (LoopExpression *)value; }
 
   auto Node() const { return this; }
 
@@ -290,6 +294,22 @@ struct IfExpression : public Expression {
 
 private:
   std::vector<std::tuple<ExpressionNode *, ExpressionNode *>> branches;
+};
+
+struct LoopExpression : public Expression {
+  LoopExpression() = delete;
+  explicit LoopExpression(ExpressionNode * body)
+      : body(body) {}
+
+  std::string Format() const override {
+    return "Loop(" + body->Format() + ")";
+  }
+
+  auto Value() const { return this->body; }
+  ExpressionKind Kind() const override { return ExpressionKind::Loop; }
+
+private:
+  ExpressionNode * body;
 };
 
 } // namespace aatbe::parser
