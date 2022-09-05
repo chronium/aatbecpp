@@ -153,7 +153,7 @@ TEST(Lexer, Keyword) {
   auto input = "if else while for break continue return then "
                "fn in var val from use module export "
                "const global type struct enum as "
-               "extern ref ptr loop";
+               "extern ref ptr loop public";
   auto lexer = makeLexer(makeFile(input));
 
   std::stringstream stream(input);

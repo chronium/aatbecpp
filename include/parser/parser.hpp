@@ -148,7 +148,8 @@ public:
   ~Parser() = default;
 
   auto PeekKeyword(const char *keyword);
-  auto ReadKeyword(const char *keyword);
+  std::optional<std::reference_wrapper<Token *>>
+  ReadKeyword(const char *keyword);
 
   bool Match(TokenKind kind);
 
@@ -245,5 +246,8 @@ ParseResult<TypeNode *> ParseType(Parser &parser);
 ParseResult<TerminalNode *> ParseTerminal(Parser &parser);
 ParseResult<ExpressionNode *> ParseExpression(Parser &tokens);
 ParseResult<ParameterBinding *> ParseParameter(Parser &parser);
+ParseResult<MemberList *> ParseMemberList(Parser &parser);
+ParseResult<StructStatement *> ParseStruct(Parser &parser);
+ParseResult<IdentifierTerm *> ParseIdentifier(Parser &parser);
 
 } // namespace aatbe::parser

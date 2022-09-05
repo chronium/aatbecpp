@@ -164,3 +164,14 @@ TEST(TypeParser, Unit) {
   EXPECT_TRUE(unit);
   EXPECT_EQ(unit.Kind(), TypeKind::Unit);
 }
+
+TEST(TypeParser, Typename) {
+  auto tokens = makeTokens("Foo");
+  Parser parser(tokens);
+
+  auto foo = ParseType(parser);
+
+  EXPECT_TRUE(foo);
+  EXPECT_EQ(foo.Kind(), TypeKind::Typename);
+  EXPECT_EQ(Dig(foo, Typename, Name), "Foo");
+}

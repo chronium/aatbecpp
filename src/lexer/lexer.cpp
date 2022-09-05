@@ -54,7 +54,7 @@ std::vector<std::string> keywords = {
     "as",       "fn",    "if",     "in",     "for",    "use",    "val",
     "var",      "else",  "enum",   "then",   "from",   "type",   "break",
     "const",    "while", "global", "return", "struct", "export", "module",
-    "continue", "ref",   "ptr",    "extern", "loop"};
+    "continue", "ref",   "ptr",    "extern", "loop",   "public"};
 
 Lexer::Lexer(std::shared_ptr<SrcFile> file)
     : file(std::move(file)), index(0), last_index(0) {

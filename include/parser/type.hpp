@@ -34,6 +34,7 @@ enum TypeKind {
   Ref,
   Pointer,
   Slice,
+  Typename,
 };
 
 struct TypeNode;
@@ -170,6 +171,21 @@ private:
   TypeKind kind;
 };
 
+struct TypenameType : public Type {
+  explicit TypenameType(std::string name) : name(std::move(name)) {}
+
+  TypeKind Kind() const override { return TypeKind::Typename; }
+  std::string Name() const { return this->name; }
+
+  std::string Format() const override { return name; }
+
+  // TODO: Type resolution
+  llvm::Type *LLVMType() override { return nullptr; }
+
+private:
+  std::string name;
+};
+
 struct BoolType : public Type {
   explicit BoolType() {}
 
@@ -256,6 +272,8 @@ public:
   auto AsRef() const { return (RefType *)value; }
 
   auto AsPointer() const { return (PointerType *)value; }
+
+  auto AsTypename() const { return (TypenameType *)value; }
 
 private:
   Type *value;

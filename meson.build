@@ -19,6 +19,8 @@ sources = [
   'src/parser/expression.cpp',
   'src/codegen/expression.cpp',
   'src/jit.cpp',
+  'src/parser/bindings.cpp',
+  'src/parser/module.cpp',
 ]
 
 tests = [
@@ -26,7 +28,8 @@ tests = [
   'tests/src/parser/terminals.cpp',
   'tests/src/parser/types.cpp',
   'tests/src/parser/expressions.cpp',
-  'tests/src/parser/functions.cpp'
+  'tests/src/parser/functions.cpp',
+  'tests/src/parser/module.cpp',
 ]
 
 libcomp = shared_library(

@@ -121,6 +121,12 @@ ParseResult<UnitType *> ParseUnit(Parser &parser) {
   return ParserSuccess(new UnitType());
 }
 
+ParseResult<TypenameType *> ParseTypename(Parser &parser) {
+  ErrorOrContinue(name, ParseIdentifier(parser));
+
+  return ParserSuccess(new TypenameType(name.Value()));
+}
+
 ParseResult<TypeNode *> ParseType(Parser &parser) {
   TryReturn(parser.Try(ParseSInt).WrapWith<TypeNode>());
   TryReturn(parser.Try(ParseUInt).WrapWith<TypeNode>());
@@ -133,6 +139,7 @@ ParseResult<TypeNode *> ParseType(Parser &parser) {
   TryReturn(parser.Try(ParseRef).WrapWith<TypeNode>());
   TryReturn(parser.Try(ParsePointer).WrapWith<TypeNode>());
   TryReturn(parser.Try(ParseUnit).WrapWith<TypeNode>());
+  TryReturn(parser.Try(ParseTypename).WrapWith<TypeNode>());
 
   return ParserError(ParseErrorKind::ExpectedType, "");
 }

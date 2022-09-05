@@ -12,12 +12,19 @@ enum class ModuleStatementKind {
   Function,
   Global,
   Constant,
-  Structure,
+  Struct,
   Typename,
   Type,
   ParameterBinding,
   ParameterList,
   Module,
+  MemberBinding,
+  MemberList,
+};
+
+enum class VisibilityModifier {
+  Public,
+  Internal,
 };
 
 } // namespace aatbe::parser

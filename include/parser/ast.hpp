@@ -5,9 +5,9 @@
 #include <vector>
 #include <optional>
 
-#include <parser/type.hpp>
-#include <parser/parameters.hpp>
+#include <parser/bindings.hpp>
 #include <parser/expression.hpp>
+#include <parser/type.hpp>
 
 #include <codegen.hpp>
 
@@ -77,6 +77,38 @@ private:
   bool isVariadic;
 };
 
+struct StructStatement : ModuleStatement {
+  StructStatement() = delete;
+
+  StructStatement(std::string name, MemberList *members)
+      : name(std::move(name)), members(members) {}
+
+  auto Name() const { return this->name; }
+  auto Members() const { return this->members; }
+
+  auto Value() const { return std::make_tuple(name, members); }
+
+  ModuleStatementKind Kind() const override {
+    return ModuleStatementKind::Struct;
+  }
+
+  std::string Format() const override {
+    return "Struct(" + name + ", " + members->Format() + ")";
+  }
+
+  llvm::Type *LLVMType() {
+    std::vector<llvm::Type *> memberTypes;
+    for (auto &member : members->Bindings()) {
+      memberTypes.push_back(member->Type()->LLVMType());
+    }
+    return llvm::StructType::create(*LLVMContext, memberTypes, this->name);
+  }
+
+private:
+  std::string name;
+  MemberList *members;
+};
+
 struct ModuleStatementNode {
   ModuleStatementNode() = delete;
 
@@ -87,6 +119,7 @@ struct ModuleStatementNode {
   auto Format() { return value->Format(); }
 
   auto AsFunction() { return (FunctionStatement *)value; }
+  auto AsStruct() { return (StructStatement *)value; }
 
   std::string Format() const { return value->Format(); }
 
