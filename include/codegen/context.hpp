@@ -23,18 +23,24 @@ public:
   explicit Scope(std::string scopeName) : scopeName(std::move(scopeName)) {}
 
   auto GetFunction(const std::string &name) { return functions[name]; }
-  auto SetFunction(const std::string &name,
-                   llvm::Function * function) {
+  auto SetFunction(const std::string &name, llvm::Function *function) {
     this->functions[name] = function;
+  }
+
+  auto GetStruct(const std::string &name) { return structs[name]; }
+  auto SetStruct(const std::string &name, llvm::StructType *structType) {
+    this->structs[name] = structType;
   }
 
   auto ScopeName() const { return scopeName; }
 
 private:
   std::string scopeName{};
-  std::unordered_map<std::string, llvm::Function *>
-      functions{};
+  std::unordered_map<std::string, llvm::Function *> functions{};
+  std::unordered_map<std::string, llvm::StructType *> structs{};
 };
+
+class TypeSystem;
 
 class CompilerContext {
 public:
@@ -53,11 +59,24 @@ public:
   auto CurrentScopeName() { return scopes[scopes.size() - 1]->ScopeName(); }
 
   auto GetFunction(const std::string &name) {
-    llvm::Function * result = nullptr;
+    llvm::Function *result = nullptr;
     for (unsigned i = scopes.size(); i-- > 0;) {
       auto scope = scopes[i];
       if (auto function = scope->GetFunction(name)) {
         result = function;
+        break;
+      }
+    }
+
+    return result;
+  }
+
+  auto GetStruct(const std::string &name) {
+    llvm::StructType *result = nullptr;
+    for (unsigned i = scopes.size(); i-- > 0;) {
+      auto scope = scopes[i];
+      if (auto structType = scope->GetStruct(name)) {
+        result = structType;
         break;
       }
     }

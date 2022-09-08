@@ -179,8 +179,7 @@ struct TypenameType : public Type {
 
   std::string Format() const override { return name; }
 
-  // TODO: Type resolution
-  llvm::Type *LLVMType() override { return nullptr; }
+  llvm::Type *LLVMType() override { return GetCompilerContext()->GetStruct(this->name); }
 
 private:
   std::string name;

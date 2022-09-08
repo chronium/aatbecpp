@@ -96,7 +96,7 @@ struct StructStatement : ModuleStatement {
     return "Struct(" + name + ", " + members->Format() + ")";
   }
 
-  llvm::Type *LLVMType() {
+  llvm::StructType *LLVMType() {
     std::vector<llvm::Type *> memberTypes;
     for (auto &member : members->Bindings()) {
       memberTypes.push_back(member->Type()->LLVMType());

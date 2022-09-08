@@ -21,6 +21,7 @@ sources = [
   'src/jit.cpp',
   'src/parser/bindings.cpp',
   'src/parser/module.cpp',
+  'src/typesys/type_system.cpp',
 ]
 
 tests = [
@@ -30,6 +31,7 @@ tests = [
   'tests/src/parser/expressions.cpp',
   'tests/src/parser/functions.cpp',
   'tests/src/parser/module.cpp',
+  'tests/src/typesys/struct.cpp',
 ]
 
 libcomp = shared_library(

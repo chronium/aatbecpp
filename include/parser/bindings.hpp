@@ -23,7 +23,7 @@ struct ParameterBinding {
   auto Name() const { return name; }
   auto Type() const { return type; }
 
-  std::string Format() const { return name + type->Format(); }
+  std::string Format() const { return name + " : " + type->Format(); }
 
   auto Value() const { return std::make_tuple(name, type); }
   auto Kind() const { return ModuleStatementKind::ParameterBinding; }
@@ -75,7 +75,7 @@ struct MemberBinding {
   auto Type() const { return type; }
   auto Visibility() const { return visibility; }
 
-  std::string Format() const { return name + type->Format(); }
+  std::string Format() const { return name + " : " + type->Format(); }
 
   auto Value() const { return std::make_tuple(name, type); }
   auto Kind() const { return ModuleStatementKind::MemberBinding; }

@@ -42,6 +42,14 @@ auto DeclPass(ModuleNode *mod) {
 
       break;
     }
+    case ModuleStatementKind::Struct: {
+        auto structDecl = statement->AsStruct();
+        auto structName = structDecl->Name();
+
+        GetCompilerContext()->CurrentScope()->SetStruct(
+            structName, structDecl->LLVMType());
+      break;
+    }
     default:
       break;
     }

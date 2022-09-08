@@ -44,7 +44,7 @@ int main(int argc, char **argv) {
     if (!jit)
       std::cout << toString(jit.takeError()) << std::endl;
 
-    jit->get()->addModule(ThreadSafeModule(std::move(aatbe::codegen::Module),
+    auto _ = jit->get()->addModule(ThreadSafeModule(std::move(aatbe::codegen::Module),
                                     std::move(aatbe::codegen::LLVMContext)));
 
     printf("==================RUN==================\n");

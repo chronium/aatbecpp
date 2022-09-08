@@ -1,7 +1,12 @@
 fn printf (fmt: str, ...) -> int32
 fn puts (_str: str) -> int32
 
-fn main (argc: int32, argv: ptr str)-> int32 = {
+struct String {
+    len: int32;
+    data: str;
+}
+
+fn main (argc: int32, argv: ptr str) -> int32 = {
     printf("Hello World!\n")
     puts("Now I need to start work on conditionals, loops, imports, lots of things.\n")
 
@@ -12,3 +17,5 @@ fn main (argc: int32, argv: ptr str)-> int32 = {
 
     0int32
 }
+
+fn test(_: ptr String)
