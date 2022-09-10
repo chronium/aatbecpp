@@ -55,6 +55,7 @@ enum class ParseErrorKind {
   ExpectedSymbol,
   InvalidOperator,
   ExpectedExpression,
+  ExpectedIdentifier,
 };
 
 // ParserError is a simple error class that holds the error kind and the

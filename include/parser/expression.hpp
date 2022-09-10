@@ -18,7 +18,8 @@ enum ExpressionKind : int {
   Tuple,
   Block,
   If,
-  Loop
+  Loop,
+  Accessor,
 };
 
 struct Expression {
@@ -52,6 +53,7 @@ struct CallExpression;
 struct BlockExpression;
 struct IfExpression;
 struct LoopExpression;
+struct AccessorExpression;
 
 struct ExpressionNode {
   ExpressionNode() = delete;
@@ -77,6 +79,8 @@ struct ExpressionNode {
   auto AsIf() { return (IfExpression *)value; }
 
   auto AsLoop() { return (LoopExpression *)value; }
+
+  auto AsAccessor() { return (AccessorExpression *)value; }
 
   auto Node() const { return this; }
 
@@ -209,7 +213,7 @@ private:
 };
 
 struct TupleExpression : public Expression {
-  explicit TupleExpression(std::vector<ExpressionNode *> elements)
+  explicit TupleExpression(std::vector<ExpressionNode *> &&elements)
       : elements(std::move(elements)) {}
 
   std::string Format() const override {
@@ -301,18 +305,35 @@ private:
 
 struct LoopExpression : public Expression {
   LoopExpression() = delete;
-  explicit LoopExpression(ExpressionNode * body)
-      : body(body) {}
+  explicit LoopExpression(ExpressionNode *body) : body(body) {}
 
-  std::string Format() const override {
-    return "Loop(" + body->Format() + ")";
-  }
+  std::string Format() const override { return "Loop(" + body->Format() + ")"; }
 
   auto Value() const { return this->body; }
   ExpressionKind Kind() const override { return ExpressionKind::Loop; }
 
 private:
-  ExpressionNode * body;
+  ExpressionNode *body;
+};
+
+struct AccessorExpression : public Expression {
+  AccessorExpression() = delete;
+  AccessorExpression(ExpressionNode *object, std::string accessor)
+      : object(object), accessor(std::move(accessor)) {}
+
+  std::string Format() const override {
+    return object->Format() + "." + accessor;
+  }
+
+  auto Value() const { return std::make_tuple(this->object, this->accessor); }
+  auto Object() const { return this->object; }
+  auto Accessor() const { return this->accessor; }
+
+  ExpressionKind Kind() const override { return ExpressionKind::Accessor; }
+
+private:
+  ExpressionNode *object;
+  std::string accessor;
 };
 
 } // namespace aatbe::parser

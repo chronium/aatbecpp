@@ -43,6 +43,22 @@ TEST(ExpressionParser, Call) {
   EXPECT_EQ(argsNode->Size(), 2);
 }
 
+TEST(ExpressionParser, CallNoArgs) {
+  auto tokens = makeTokens(R"(printf())");
+  Parser parser(tokens);
+
+  auto expr = ParseExpression(parser);
+
+  EXPECT_TRUE(expr);
+  EXPECT_EQ(expr.Kind(), ExpressionKind::Call);
+
+  auto calleeNode = Dig(expr, Call, Callee)->AsAtom();
+  auto argsNode = Dig(expr, Call, Args)->AsTuple();
+
+  EXPECT_EQ(Indirect(calleeNode, Identifier), "printf");
+  EXPECT_EQ(argsNode->Size(), 0);
+}
+
 TEST(ExpressionParser, Block) {
   auto tokens = makeTokens(R"({ 1 2; 3 })");
   Parser parser(tokens);
@@ -117,4 +133,66 @@ TEST(ExpressionParser, Loop) {
 
   EXPECT_TRUE(expr);
   EXPECT_EQ(expr.Kind(), ExpressionKind::Loop);
+}
+
+TEST(ExpressionParser, Accessor) {
+  auto tokens = makeTokens(R"(foo.bar)");
+  Parser parser(tokens);
+
+  auto expr = ParseExpression(parser);
+
+  EXPECT_TRUE(expr);
+  EXPECT_EQ(expr.Kind(), ExpressionKind::Accessor);
+  EXPECT_EQ(Dig(expr, Accessor, Object)->Format(), "foo");
+  EXPECT_EQ(Dig(expr, Accessor, Accessor), "bar");
+}
+
+TEST(ExpressionParser, AccessorChain) {
+  auto tokens = makeTokens(R"(foo.bar.baz)");
+  Parser parser(tokens);
+
+  auto expr = ParseExpression(parser);
+
+  EXPECT_TRUE(expr);
+  EXPECT_EQ(expr.Kind(), ExpressionKind::Accessor);
+  EXPECT_EQ(Dig(expr, Accessor, Object)->Format(), "foo.bar");
+  EXPECT_EQ(Dig(expr, Accessor, Accessor), "baz");
+}
+
+TEST(ExpressionParser, AccessorChainWithExpr) {
+  auto tokens = makeTokens(R"(foo.bar().baz)");
+  Parser parser(tokens);
+
+  auto expr = ParseExpression(parser);
+
+  EXPECT_TRUE(expr);
+  EXPECT_EQ(expr.Kind(), ExpressionKind::Accessor);
+  EXPECT_EQ(Dig(expr, Accessor, Object)->Kind(), ExpressionKind::Call);
+  EXPECT_EQ(Dig(expr, Accessor, Accessor), "baz");
+}
+
+TEST(ExpressionParser, AccessorOnFuncall) {
+  auto tokens = makeTokens(R"(foo().bar)");
+  Parser parser(tokens);
+
+  auto expr = ParseExpression(parser);
+
+  EXPECT_TRUE(expr);
+  EXPECT_EQ(expr.Kind(), ExpressionKind::Accessor);
+  EXPECT_EQ(Dig(expr, Accessor, Object)->Kind(), ExpressionKind::Call);
+  EXPECT_EQ(Dig(expr, Accessor, Accessor), "bar");
+}
+
+TEST(ExpressionParser, CallMember) {
+  auto tokens = makeTokens(R"(foo.bar.baz())");
+  Parser parser(tokens);
+
+  auto expr = ParseExpression(parser);
+  auto callee = Dig(expr, Call, Callee);
+
+  EXPECT_TRUE(expr);
+  EXPECT_EQ(expr.Kind(), ExpressionKind::Call);
+  EXPECT_EQ(callee->Kind(), ExpressionKind::Accessor);
+  EXPECT_EQ(callee->AsAccessor()->Accessor(), "bar");
+  EXPECT_EQ(Dig(expr, Call, Args)->AsTuple()->Size(), 0);
 }

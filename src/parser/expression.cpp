@@ -43,14 +43,6 @@ ParseResult<UnaryExpression *> ParseUnary(Parser &parser) {
   return ParserError(ParseErrorKind::InvalidOperator, "");
 }
 
-ParseResult<TupleExpression *> ParseTuple(Parser &parser) {
-  auto exprs = Deffer(new TupleExpression(parser.DelimitedBy(
-      Deffer(ParseExpression(parser).Node()), TokenKind::Symbol, ",")));
-
-  return parser.SurroundedBy(exprs, TokenKind::Symbol, "(", TokenKind::Symbol,
-                             ")");
-}
-
 ParseResult<AtomExpression *> ParseUnitAtom(Parser &parser) {
   if (parser.Read(TokenKind::Symbol, "(")) {
     if (parser.Read(TokenKind::Symbol, ")"))
@@ -61,6 +53,16 @@ ParseResult<AtomExpression *> ParseUnitAtom(Parser &parser) {
   }
 
   return ParserError(ParseErrorKind::ExpectedToken, "");
+}
+
+ParseResult<TupleExpression *> ParseTuple(Parser &parser) {
+  if (parser.Try(ParseUnitAtom))
+    return ParserSuccess(new TupleExpression({}));
+
+  return parser.SurroundedBy(
+      Deffer(new TupleExpression(parser.DelimitedBy(
+          Deffer(ParseExpression(parser).Node()), TokenKind::Symbol, ","))),
+      TokenKind::Symbol, "(", TokenKind::Symbol, ")");
 }
 
 ParseResult<BlockExpression *> ParseBlock(Parser &parser) {
@@ -128,8 +130,20 @@ ParseResult<ExpressionNode *> ParseExpression(Parser &parser) {
 
   auto tupleArgs = parser.Try(ParseTuple).WrapWith<ExpressionNode>();
   if (tupleArgs)
-    return atom.WrapWith<CallExpression>(tupleArgs.Node())
-        .WrapWith<ExpressionNode>();
+    atom = atom.WrapWith<CallExpression>(tupleArgs.Node())
+               .WrapWith<ExpressionNode>();
+
+  while (parser.Read(TokenKind::Symbol, ".")) {
+    ErrorOrContinue(member, ParseIdentifier(parser));
+    tupleArgs = parser.Try(ParseTuple).WrapWith<ExpressionNode>();
+    if (tupleArgs) {
+      atom = atom.WrapWith<CallExpression>(tupleArgs.Node())
+                 .WrapWith<ExpressionNode>();
+      continue;
+    }
+    atom = atom.WrapWith<AccessorExpression>(member.Value())
+               .WrapWith<ExpressionNode>();
+  }
 
   return atom;
 }
